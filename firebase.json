@@ -1,0 +1,26 @@
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/api/quotazioni",
+        "function": { "functionId": "quotazioni", "region": "europe-west1" }
+      },
+      {
+        "source": "/api/dettagli-giocatore",
+        "function": { "functionId": "dettagliGiocatore", "region": "europe-west1" }
+      },
+      { "source": "**", "destination": "/index.html" }
+    ]
+  },
+  "functions": {
+    "source": "functions",
+    "ignore": ["node_modules", ".git", "*.log"]
+  },
+  "emulators": {
+    "functions": { "port": 5001 },
+    "hosting": { "port": 5002 },
+    "ui": { "enabled": true }
+  }
+}
