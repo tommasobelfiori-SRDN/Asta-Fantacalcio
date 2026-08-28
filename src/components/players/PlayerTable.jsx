@@ -33,12 +33,12 @@ export default function PlayerTable() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-baseline justify-between border-b border-hair border-t-2 border-t-ink py-2 text-[10px] font-bold uppercase tracking-caps text-muted">
         <span>Listone</span>
         <span className="font-mono normal-case tracking-normal">{filtered.length} calciatori</span>
       </div>
-      <ul className="max-h-[70vh] overflow-y-auto">
+      <ul className="min-h-0 flex-1 overflow-y-auto">
         {filtered.map((p) => (
           <PlayerRow key={p.id} player={p} />
         ))}

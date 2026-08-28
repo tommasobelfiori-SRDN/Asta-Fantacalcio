@@ -2,6 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Almanacco diurno: carta calda e inchiostro. */
+:root {
+  --c-paper: 246 241 230;
+  --c-card: 251 248 240;
+  --c-ink: 35 32 26;
+  --c-muted: 117 109 94;
+  --c-campo: 47 107 75;
+  --c-azzurro: 61 106 140;
+  --c-ocra: 176 127 27;
+  --c-granata: 158 59 51;
+  --c-hair: rgba(35, 32, 26, 0.22);
+  --shadow-press: 3px 3px 0 rgba(35, 32, 26, 0.16);
+  --shadow-card: 7px 7px 0 rgba(35, 32, 26, 0.22);
+}
+
+/* Almanacco notturno: carta scura, inchiostro chiaro, colori maglia schiariti
+   per reggere il contrasto. Stessa gerarchia, luce invertita. */
+.dark {
+  --c-paper: 30 26 20;
+  --c-card: 39 34 27;
+  --c-ink: 237 231 216;
+  --c-muted: 154 145 127;
+  --c-campo: 125 174 147;
+  --c-azzurro: 138 177 208;
+  --c-ocra: 216 166 63;
+  --c-granata: 210 124 112;
+  --c-hair: rgba(237, 231, 216, 0.18);
+  --shadow-press: 3px 3px 0 rgba(0, 0, 0, 0.5);
+  --shadow-card: 7px 7px 0 rgba(0, 0, 0, 0.55);
+}
+
 html,
 body,
 #root {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from './store.js'
 import Header from './components/layout/Header.jsx'
 import MobileTabBar from './components/layout/MobileTabBar.jsx'
@@ -71,7 +71,20 @@ function TabBar() {
 export default function App() {
   const activeTab = useStore((s) => s.activeTab)
   const showLeagueConfigModal = useStore((s) => s.showLeagueConfigModal)
+  const theme = useStore((s) => s.theme)
   const [mobileDashboardOpen, setMobileDashboardOpen] = useState(false)
+
+  // Tema: scelta esplicita se salvata, altrimenti segue il sistema (anche live).
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const apply = () => {
+      const dark = theme ? theme === 'dark' : mq.matches
+      document.documentElement.classList.toggle('dark', dark)
+    }
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [theme])
   const leagueConfig = useStore((s) => s.leagueConfig)
   const draftByPlayerId = useStore((s) => s.draftByPlayerId)
   const mySquad = getMySquad(draftByPlayerId)
@@ -120,16 +133,18 @@ export default function App() {
         )}
       </div>
 
-      <main className="flex flex-1 flex-col overflow-hidden pb-16 lg:pb-0">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden pb-16 lg:pb-0">
         <TabBar />
-        <div className="flex-1 overflow-y-auto px-4 py-3 lg:px-9 lg:py-4">
+        <div className="flex min-h-0 flex-1 flex-col px-4 py-3 lg:px-9 lg:py-4">
           {activeTab === 'cerca' ? (
-            <div className="flex flex-col gap-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-2">
               <PlayerFilters />
               <PlayerTable />
             </div>
           ) : (
-            <SuggestionsPanel />
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <SuggestionsPanel />
+            </div>
           )}
         </div>
       </main>

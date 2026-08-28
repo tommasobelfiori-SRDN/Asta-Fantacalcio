@@ -19,7 +19,7 @@ export default function UndoToast() {
       <span className="font-serif">{lastAction.label}</span>
       <button
         onClick={undoLastAction}
-        className="text-[11px] font-bold uppercase tracking-caps text-[#A9C8B2] hover:text-paper"
+        className="text-[11px] font-bold uppercase tracking-caps underline underline-offset-2 hover:opacity-80"
       >
         Annulla
       </button>

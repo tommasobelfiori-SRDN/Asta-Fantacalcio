@@ -26,6 +26,9 @@ export const useStore = create(
       players: [],
       playersUpdatedAt: null,
       draftByPlayerId: {},
+      theme: null, // null = segue il sistema; 'light' | 'dark' = scelta esplicita
+
+      setTheme: (theme) => set({ theme }),
 
       // --- stato transitorio (escluso dalla persistenza, vedi partialize) ---
       playersLoading: false,
@@ -179,6 +182,7 @@ export const useStore = create(
         players: state.players,
         playersUpdatedAt: state.playersUpdatedAt,
         draftByPlayerId: state.draftByPlayerId,
+        theme: state.theme,
       }),
     }
   )
