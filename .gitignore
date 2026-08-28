@@ -8,3 +8,5 @@ dist/
 .firebase/
 firebase-debug.log
 ui-debug.log
+macos/build/
+macos/*.xcodeproj/xcuserdata/

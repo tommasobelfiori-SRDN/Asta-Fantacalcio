@@ -1,0 +1,26 @@
+name: AstaFantacalcio
+options:
+  bundleIdPrefix: com.tommasobelfiori
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+targets:
+  AstaFantacalcio:
+    type: application
+    platform: macOS
+    sources:
+      - AstaFantacalcio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tommasobelfiori.AstaFantacalcio
+        PRODUCT_NAME: Asta Fantacalcio
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Asta Fantacalcio
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.sports
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Tommaso Belfiori"
+        CODE_SIGN_ENTITLEMENTS: AstaFantacalcio/AstaFantacalcio.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5.0"

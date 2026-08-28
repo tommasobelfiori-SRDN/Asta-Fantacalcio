@@ -33,6 +33,18 @@ npm run build
 firebase deploy --only functions,hosting
 ```
 
+## App macOS
+
+In `macos/` c'è un'app nativa (SwiftUI + WKWebView) che incapsula il sito live: stessa app, finestra dedicata, stato dell'asta persistente nel container sandbox. Il progetto Xcode si rigenera da `project.yml`:
+
+```bash
+cd macos
+xcodegen generate
+DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer" xcodebuild -project AstaFantacalcio.xcodeproj -scheme AstaFantacalcio -configuration Debug CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="-" build
+```
+
+Per la distribuzione TestFlight: aprire il progetto in Xcode, impostare il proprio team nella scheda Signing & Capabilities, creare l'app record su App Store Connect con bundle id `com.tommasobelfiori.AstaFantacalcio`, poi Product → Archive → Distribute App → TestFlight.
+
 ## Note sui dati
 
 I dati (ruoli, quotazioni, FVM) vengono letti dalla pagina pubblica `fantacalcio.it/quotazioni-fantacalcio`, non protetta da login. Il recupero avviene solo quando premi manualmente "Aggiorna quotazioni" — mai in automatico o in polling continuo. Se il sito cambia struttura, la funzione può smettere di funzionare finché i selettori non vengono aggiornati: **testa l'aggiornamento quotazioni qualche giorno prima dell'asta vera**, non la sera stessa.
