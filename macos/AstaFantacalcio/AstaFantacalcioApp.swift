@@ -26,7 +26,7 @@ struct ContentView: View {
     var body: some View {
         WebView(url: URL(string: "https://fantacalcio-asta-tb.web.app")!)
             .frame(minWidth: 900, minHeight: 600)
-            // La barra del titolo prende il colore carta del sito.
-            .toolbarBackground(Color(red: 0.965, green: 0.945, blue: 0.902), for: .windowToolbar)
+        // Il colore della barra del titolo lo detta la pagina: il sito notifica
+        // il tema effettivo (chiaro/scuro) e WebView.Coordinator tinge la finestra.
     }
 }
