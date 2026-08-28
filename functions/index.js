@@ -256,9 +256,10 @@ function parseItalianNumber(text) {
   return parseNumber(String(text || '').replace(',', '.'))
 }
 
-// Formato osservato: "12 - 45%" (partite nella categoria - percentuale sul totale).
+// Formato osservato: "12 - 45%" oppure "12 - 45" (il simbolo % a volte sta fuori
+// dallo span): partite nella categoria - percentuale sul totale.
 function parseSeasonStatusValue(text) {
-  const match = String(text || '').match(/(\d+)\s*-\s*(\d+)\s*%/)
+  const match = String(text || '').match(/(\d+)\s*-\s*(\d+)\s*%?/)
   if (!match) return { raw: String(text || '').trim() || null, count: null, percent: null }
   return { raw: null, count: Number(match[1]), percent: Number(match[2]) }
 }

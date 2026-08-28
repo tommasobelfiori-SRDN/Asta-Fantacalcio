@@ -32,12 +32,12 @@ export default function ExportImportState() {
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <button onClick={handleExport} className="text-slate-500 hover:text-emerald-700">
-        Esporta stato
+    <div className="flex items-center gap-4">
+      <button onClick={handleExport} className="uppercase tracking-caps text-muted hover:text-campo">
+        Esporta
       </button>
-      <button onClick={handleImportClick} className="text-slate-500 hover:text-emerald-700">
-        Importa stato
+      <button onClick={handleImportClick} className="uppercase tracking-caps text-muted hover:text-campo">
+        Importa
       </button>
       <input ref={fileInputRef} type="file" accept="application/json" onChange={handleFileChange} className="hidden" />
     </div>

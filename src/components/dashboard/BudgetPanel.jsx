@@ -22,27 +22,27 @@ export default function BudgetPanel() {
   const maxBudget = computeMaxRecommendedBudget(remaining, totalSlotsRemaining)
 
   return (
-    <div className="rounded-lg border border-slate-200 p-3">
-      <div className="grid grid-cols-2 gap-3 text-center">
-        <div>
-          <div className="text-2xl font-bold text-slate-900">{remaining}</div>
-          <div className="text-xs text-slate-500">crediti rimasti</div>
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-0.5">
+          <div className="font-mono text-[38px] font-semibold leading-none text-ink">{remaining}</div>
+          <div className="text-[10px] font-semibold uppercase tracking-caps text-muted">Crediti rimasti</div>
         </div>
-        <div>
-          <div className="text-2xl font-bold text-slate-900">{spent}</div>
-          <div className="text-xs text-slate-500">crediti spesi</div>
+        <div className="flex flex-col gap-0.5">
+          <div className="font-mono text-[38px] font-semibold leading-none text-muted">{spent}</div>
+          <div className="text-[10px] font-semibold uppercase tracking-caps text-muted">Crediti spesi</div>
         </div>
       </div>
-      <div className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-center">
+      <div className="flex items-baseline justify-between gap-2 border-y-2 border-ink px-0.5 py-2.5">
         {maxBudget.complete ? (
-          <div className="text-sm font-medium text-emerald-800">Rosa completa 🎉</div>
+          <span className="text-[11px] font-bold uppercase tracking-caps text-campo">Rosa completa</span>
         ) : (
           <>
-            <div className="text-lg font-semibold text-emerald-800">{maxBudget.value} cr</div>
-            <div className="text-xs text-emerald-700">
-              budget massimo consigliato per il prossimo acquisto
-              {maxBudget.capped && ' — attenzione, budget già in tensione'}
-            </div>
+            <span className="text-[11px] font-bold uppercase tracking-caps text-campo">
+              Tetto prossimo acquisto
+              {maxBudget.capped && <span className="ml-1.5 text-granata">· budget in tensione</span>}
+            </span>
+            <span className="font-mono text-2xl font-semibold text-campo">{maxBudget.value} cr</span>
           </>
         )}
       </div>

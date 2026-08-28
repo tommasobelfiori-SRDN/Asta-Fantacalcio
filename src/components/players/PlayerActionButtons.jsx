@@ -10,13 +10,15 @@ export default function PlayerActionButtons({ player, draftEntry }) {
 
   if (draftEntry) {
     return (
-      <div className="flex items-center justify-end gap-2">
-        <span className={`text-xs font-medium ${draftEntry.status === 'mine' ? 'text-emerald-700' : 'text-slate-500'}`}>
-          {draftEntry.status === 'mine' ? `Mio · ${draftEntry.price} cr` : 'Preso'}
-        </span>
+      <div className="flex items-center justify-end gap-2.5">
+        {draftEntry.status === 'mine' && (
+          <span className="text-[11px] font-bold uppercase tracking-caps text-campo">
+            Mio · {draftEntry.price} cr
+          </span>
+        )}
         <button
           onClick={() => freePlayer(player.id, player.name)}
-          className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+          className="h-11 rounded-[2px] border-[1.5px] border-muted px-3.5 text-[11px] font-bold uppercase tracking-caps text-muted hover:border-ink hover:text-ink lg:h-8"
         >
           Libera
         </button>
@@ -27,7 +29,7 @@ export default function PlayerActionButtons({ player, draftEntry }) {
   if (editingPrice) {
     return (
       <form
-        className="flex items-center justify-end gap-1"
+        className="flex items-center justify-end gap-1.5"
         onSubmit={(e) => {
           e.preventDefault()
           markMine(player, price)
@@ -45,33 +47,36 @@ export default function PlayerActionButtons({ player, draftEntry }) {
           onKeyDown={(e) => {
             if (e.key === 'Escape') setEditingPrice(false)
           }}
-          className="w-16 rounded border border-emerald-400 px-1.5 py-1 text-right text-xs focus:outline-none"
+          className="h-11 w-16 rounded-[2px] border-[1.5px] border-campo bg-card text-center font-mono text-[15px] font-semibold text-campo focus:outline-none lg:h-8"
         />
-        <button type="submit" className="rounded bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700">
+        <button
+          type="submit"
+          className="h-11 rounded-[2px] bg-campo px-3.5 text-[11px] font-bold uppercase tracking-caps text-paper hover:opacity-90 lg:h-8"
+        >
           OK
         </button>
         <button
           type="button"
           onClick={() => setEditingPrice(false)}
-          className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+          className="h-11 rounded-[2px] border-[1.5px] border-muted px-3 text-[11px] font-bold uppercase tracking-caps text-muted hover:border-ink hover:text-ink lg:h-8"
         >
-          Annulla
+          Esc
         </button>
       </form>
     )
   }
 
   return (
-    <div className="flex items-center justify-end gap-1.5">
+    <div className="flex items-center justify-end gap-2">
       <button
         onClick={() => setEditingPrice(true)}
-        className="rounded bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+        className="h-11 rounded-[2px] bg-ink px-4 text-[11px] font-bold uppercase tracking-caps text-paper hover:opacity-90 lg:h-8"
       >
         Mio
       </button>
       <button
         onClick={() => markTaken(player)}
-        className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+        className="h-11 rounded-[2px] border-[1.5px] border-ink px-3.5 text-[11px] font-bold uppercase tracking-caps text-ink hover:bg-ink/5 lg:h-8"
       >
         Preso
       </button>

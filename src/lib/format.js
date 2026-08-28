@@ -15,5 +15,5 @@ export function formatRelativeTime(isoString) {
 
 export function formatRatio(ratio) {
   if (ratio == null || !Number.isFinite(ratio)) return '—'
-  return ratio.toFixed(2)
+  return `${ratio.toFixed(1).replace('.', ',')}×`
 }

@@ -15,9 +15,12 @@ export default function UndoToast() {
   if (!lastAction) return null
 
   return (
-    <div className="fixed bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 whitespace-nowrap rounded-lg bg-slate-900 px-4 py-2.5 text-sm text-white shadow-lg lg:bottom-4">
-      <span>{lastAction.label}</span>
-      <button onClick={undoLastAction} className="font-semibold text-emerald-400 hover:text-emerald-300">
+    <div className="fixed bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-center gap-4 whitespace-nowrap rounded-[2px] bg-ink px-4 py-2.5 text-sm text-paper shadow-press lg:bottom-4">
+      <span className="font-serif">{lastAction.label}</span>
+      <button
+        onClick={undoLastAction}
+        className="text-[11px] font-bold uppercase tracking-caps text-[#A9C8B2] hover:text-paper"
+      >
         Annulla
       </button>
     </div>

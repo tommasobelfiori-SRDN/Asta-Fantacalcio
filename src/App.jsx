@@ -10,28 +10,24 @@ import PlayerTable from './components/players/PlayerTable.jsx'
 import SuggestionsPanel from './components/suggestions/SuggestionsPanel.jsx'
 import LeagueConfigModal from './components/setup/LeagueConfigModal.jsx'
 import UndoToast from './components/common/UndoToast.jsx'
-import { CLASSIC_ROLES } from './lib/roles.js'
-import { getMySquad, getSlotsFilledByRole, getCreditsRemaining } from './lib/engine.js'
+import { CLASSIC_ROLES, ROLE_BADGE_CLASSES } from './lib/roles.js'
+import { getMySquad, getSlotsFilledByRole, getCreditsRemaining, getAvailablePlayers } from './lib/engine.js'
 
 const TABS = [
   { id: 'cerca', label: 'Cerca' },
   { id: 'suggerimenti', label: 'Suggerimenti' },
 ]
 
-function useBudgetSummary() {
-  const leagueConfig = useStore((s) => s.leagueConfig)
-  const draftByPlayerId = useStore((s) => s.draftByPlayerId)
-  const mySquad = getMySquad(draftByPlayerId)
-  return {
-    leagueConfig,
-    creditsRemaining: getCreditsRemaining(leagueConfig, mySquad),
-    filled: getSlotsFilledByRole(mySquad),
-  }
+const ROLE_TEXT_CLASSES = {
+  P: 'text-ocra',
+  D: 'text-azzurro',
+  C: 'text-campo',
+  A: 'text-granata',
 }
 
 function Dashboard() {
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-5 px-6 pb-6">
       <BudgetPanel />
       <RosterSlots />
       <RosterList />
@@ -42,21 +38,32 @@ function Dashboard() {
 function TabBar() {
   const activeTab = useStore((s) => s.activeTab)
   const setActiveTab = useStore((s) => s.setActiveTab)
+  const players = useStore((s) => s.players)
+  const draftByPlayerId = useStore((s) => s.draftByPlayerId)
+  const available = getAvailablePlayers(players, draftByPlayerId).length
+
   return (
-    <nav className="hidden gap-4 border-b border-slate-200 bg-white px-4 lg:flex">
-      {TABS.map((t) => (
-        <button
-          key={t.id}
-          onClick={() => setActiveTab(t.id)}
-          className={`border-b-2 px-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === t.id
-              ? 'border-emerald-600 text-emerald-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          {t.label}
-        </button>
-      ))}
+    <nav className="hidden items-end justify-between border-b-2 border-ink bg-paper px-9 lg:flex">
+      <div className="flex gap-7">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`-mb-[2px] pb-2.5 text-[13px] uppercase tracking-caps ${
+              activeTab === t.id
+                ? 'border-b-4 border-ink font-extrabold text-ink'
+                : 'border-b-4 border-transparent font-semibold text-muted hover:text-ink'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {players.length > 0 && (
+        <span className="pb-2.5 font-mono text-xs text-muted">
+          {available} disponibili su {players.length}
+        </span>
+      )}
     </nav>
   )
 }
@@ -65,33 +72,48 @@ export default function App() {
   const activeTab = useStore((s) => s.activeTab)
   const showLeagueConfigModal = useStore((s) => s.showLeagueConfigModal)
   const [mobileDashboardOpen, setMobileDashboardOpen] = useState(false)
-  const { leagueConfig, creditsRemaining, filled } = useBudgetSummary()
+  const leagueConfig = useStore((s) => s.leagueConfig)
+  const draftByPlayerId = useStore((s) => s.draftByPlayerId)
+  const mySquad = getMySquad(draftByPlayerId)
+  const creditsRemaining = getCreditsRemaining(leagueConfig, mySquad)
+  const filled = getSlotsFilledByRole(mySquad)
 
   return (
-    <div className="flex h-screen flex-col bg-slate-50 text-slate-900 lg:flex-row">
-      <aside className="hidden w-[380px] shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-white lg:flex">
+    <div className="flex h-screen flex-col bg-paper text-ink lg:flex-row">
+      <aside className="hidden w-[380px] shrink-0 flex-col overflow-y-auto border-r-2 border-ink bg-paper lg:flex">
         <Header />
         <Dashboard />
       </aside>
 
-      <div className="border-b border-slate-200 bg-white px-3 py-2 lg:hidden">
+      <div className="border-b-2 border-ink bg-paper px-4 py-2.5 lg:hidden">
         <button
           className="flex w-full items-center justify-between gap-2"
           onClick={() => setMobileDashboardOpen((v) => !v)}
         >
-          <span className="text-sm font-semibold text-emerald-700">⚽ Asta Fantacalcio</span>
-          <span className="flex items-center gap-2 text-xs text-slate-600">
-            <span className="font-semibold text-slate-900">{creditsRemaining} cr</span>
+          <span className="font-serif text-lg font-extrabold italic text-ink">Asta Fantacalcio</span>
+          <span className="flex items-center gap-2.5 font-mono text-xs text-muted">
+            <span className="text-[15px] font-semibold text-ink">{creditsRemaining} cr</span>
             {CLASSIC_ROLES.map((r) => (
-              <span key={r}>
+              <span key={r} className={filled[r] > 0 ? `font-semibold ${ROLE_TEXT_CLASSES[r]}` : ''}>
                 {r} {filled[r]}/{leagueConfig.roles[r]}
               </span>
             ))}
-            <span aria-hidden>{mobileDashboardOpen ? '▲' : '▼'}</span>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              className={mobileDashboardOpen ? 'rotate-180' : ''}
+            >
+              <path d="M2 3.5l3 3 3-3"></path>
+            </svg>
           </span>
         </button>
         {mobileDashboardOpen && (
-          <div className="border-t border-slate-100">
+          <div className="border-t border-hair">
             <Header />
             <Dashboard />
           </div>
@@ -100,9 +122,9 @@ export default function App() {
 
       <main className="flex flex-1 flex-col overflow-hidden pb-16 lg:pb-0">
         <TabBar />
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto px-4 py-3 lg:px-9 lg:py-4">
           {activeTab === 'cerca' ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <PlayerFilters />
               <PlayerTable />
             </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../../store.js'
+import { ROLE_LABELS } from '../../lib/roles.js'
 import Modal from '../common/Modal.jsx'
 
 const STATUS_LABELS = {
@@ -12,14 +13,25 @@ const STATUS_LABELS = {
 
 function StatusRow({ label, value }) {
   if (!value) return null
+  const percent = value.percent
   return (
-    <li className="flex items-center justify-between gap-2">
-      <span className="text-slate-600">{label}</span>
-      <span className="font-medium text-slate-800">
-        {value.percent != null ? `${value.percent}%` : value.raw || '—'}
+    <li className="flex items-center gap-3 border-b border-hair py-2 last:border-b-0">
+      <span className="w-44 shrink-0 text-[13px]">{label}</span>
+      <span className="h-2 flex-1 bg-ink/10">
+        {percent != null && percent > 0 && (
+          <span className="block h-2 bg-campo" style={{ width: `${Math.min(100, percent)}%` }}></span>
+        )}
+      </span>
+      <span className="w-16 shrink-0 text-right font-mono text-[13px] text-muted">
+        {percent != null ? `${value.count ?? '—'} · ${percent}%` : value.raw || '—'}
       </span>
     </li>
   )
+}
+
+function parseDays(giorni) {
+  const n = Number(String(giorni || '').match(/\d+/)?.[0])
+  return Number.isFinite(n) ? n : null
 }
 
 export default function PlayerDetailsButton({ player }) {
@@ -34,103 +46,126 @@ export default function PlayerDetailsButton({ player }) {
     fetchPlayerDetails(player)
   }
 
+  const tm = detail?.data?.transfermarkt
+
   return (
     <>
       <button
         onClick={handleOpen}
-        className="shrink-0 rounded border border-slate-300 px-1.5 py-1 text-xs text-slate-500 hover:bg-slate-100"
+        className="flex h-11 w-9 shrink-0 items-center justify-center rounded-[2px] border-[1.5px] border-muted/60 text-muted hover:border-ink hover:text-ink lg:h-8 lg:w-8"
         title="Dettagli calciatore"
         aria-label={`Dettagli su ${player.name}`}
       >
-        ℹ️
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <circle cx="8" cy="8" r="6.5"></circle>
+          <path d="M8 7.2v4"></path>
+          <circle cx="8" cy="4.8" r="0.4" fill="currentColor"></circle>
+        </svg>
       </button>
       {open && (
-        <Modal title={player.name} onClose={() => setOpen(false)}>
-          <div className="flex flex-col gap-4 text-sm">
-            {(!detail || detail.status === 'loading') && <p className="text-slate-500">Caricamento…</p>}
+        <Modal
+          title={player.name}
+          subtitle={`${player.team} · ${ROLE_LABELS[player.roleClassic]} · ${player.quotazioneClassicAttuale} cr · FVM ${player.fvmClassic}`}
+          onClose={() => setOpen(false)}
+        >
+          <div className="flex flex-col gap-5 text-sm">
+            {(!detail || detail.status === 'loading') && (
+              <p className="font-serif italic text-muted">Caricamento…</p>
+            )}
 
-            {detail?.status === 'error' && <p className="text-rose-600">{detail.error}</p>}
+            {detail?.status === 'error' && <p className="text-granata">{detail.error}</p>}
 
             {detail?.status === 'ready' && (
               <>
-                <div className="flex gap-6">
-                  <div>
-                    <div className="text-xs text-slate-400">Media voto</div>
-                    <div className="text-lg font-semibold text-slate-900">{detail.data.mediaVoto ?? '—'}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-baseline justify-between border-[1.5px] border-ink px-3.5 py-2.5">
+                    <span className="text-[10px] font-bold uppercase tracking-caps text-muted">Media voto</span>
+                    <span className="font-mono text-2xl font-semibold">
+                      {detail.data.mediaVoto ? String(detail.data.mediaVoto).replace('.', ',') : '—'}
+                    </span>
                   </div>
-                  <div>
-                    <div className="text-xs text-slate-400">Fantamedia</div>
-                    <div className="text-lg font-semibold text-slate-900">{detail.data.fantamedia ?? '—'}</div>
+                  <div className="flex items-baseline justify-between border-[1.5px] border-campo px-3.5 py-2.5">
+                    <span className="text-[10px] font-bold uppercase tracking-caps text-campo">Fantamedia</span>
+                    <span className="font-mono text-2xl font-semibold text-campo">
+                      {detail.data.fantamedia ? String(detail.data.fantamedia).replace('.', ',') : '—'}
+                    </span>
                   </div>
                 </div>
 
-                <div>
-                  <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">
+                <div className="flex flex-col">
+                  <div className="border-b border-ink pb-1.5 text-[11px] font-bold uppercase tracking-caps">
                     Stagione in corso
                   </div>
-                  <ul className="flex flex-col gap-1">
+                  <ul>
                     {Object.entries(STATUS_LABELS).map(([key, label]) => (
                       <StatusRow key={key} label={label} value={detail.data.seasonStatus?.[key]} />
                     ))}
                   </ul>
                 </div>
 
-                <div>
-                  <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Cronaca infortuni (Transfermarkt)
+                <div className="flex flex-col">
+                  <div className="flex items-baseline justify-between border-b border-ink pb-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-caps">Cronaca infortuni</span>
+                    <span className="font-mono text-[10px] text-muted">fonte Transfermarkt</span>
                   </div>
-                  {detail.data.transfermarkt?.found && detail.data.transfermarkt.injuries.length > 0 && (
-                    <ul className="flex flex-col gap-1.5">
-                      {detail.data.transfermarkt.injuries.map((inj, i) => (
-                        <li key={i} className="rounded border border-slate-100 px-2 py-1.5">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <span className="font-medium text-slate-800">{inj.tipo}</span>
-                            <span className="shrink-0 text-xs text-slate-400">{inj.stagione}</span>
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            {inj.da} → {inj.a} · {inj.giorni}
-                          </div>
-                        </li>
-                      ))}
+                  {tm?.found && tm.injuries.length > 0 && (
+                    <ul>
+                      {tm.injuries.map((inj, i) => {
+                        const days = parseDays(inj.giorni)
+                        return (
+                          <li
+                            key={i}
+                            className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-3 border-b border-hair py-2 last:border-b-0"
+                          >
+                            <span className="truncate font-serif text-[15px] font-medium">{inj.tipo}</span>
+                            <span className="font-mono text-[11px] text-muted">
+                              {inj.da} → {inj.a}
+                            </span>
+                            <span
+                              className={`w-14 text-right font-mono text-xs ${
+                                days != null && days >= 30 ? 'font-semibold text-granata' : ''
+                              }`}
+                            >
+                              {inj.giorni}
+                            </span>
+                          </li>
+                        )
+                      })}
                     </ul>
                   )}
-                  {detail.data.transfermarkt?.found && detail.data.transfermarkt.injuries.length === 0 && (
-                    <p className="text-xs text-slate-500">Nessun infortunio registrato su Transfermarkt.</p>
+                  {tm?.found && tm.injuries.length === 0 && (
+                    <p className="py-2.5 font-serif text-[13px] italic text-muted">
+                      Nessun infortunio registrato su Transfermarkt.
+                    </p>
                   )}
-                  {detail.data.transfermarkt && !detail.data.transfermarkt.found && (
-                    <p className="text-xs text-slate-400">
+                  {tm && !tm.found && (
+                    <p className="py-2.5 font-serif text-[13px] italic text-muted">
                       Calciatore non trovato con certezza su Transfermarkt (nome o squadra non corrispondenti).
                     </p>
                   )}
-                  {detail.data.transfermarkt?.found && (
-                    <a
-                      href={`https://www.transfermarkt.it/x/verletzungen/spieler/${detail.data.transfermarkt.tmId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1.5 inline-block text-xs font-medium text-emerald-700 hover:underline"
-                    >
-                      Storico completo su Transfermarkt ↗
-                    </a>
-                  )}
                 </div>
 
-                {detail.data.description && <p className="text-xs leading-relaxed text-slate-500">{detail.data.description}</p>}
+                {detail.data.description && (
+                  <p className="font-serif text-[13px] leading-relaxed text-muted">{detail.data.description}</p>
+                )}
               </>
             )}
 
-            <p className="text-xs text-slate-400">
-              Statistiche delle stagioni passate non disponibili come dato strutturato su fantacalcio.it (solo
-              grafici) — per quelle serve la scheda completa.
-            </p>
-
-            <a
-              href={player.profileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-medium text-emerald-700 hover:underline"
-            >
-              Apri scheda completa su fantacalcio.it ↗
-            </a>
+            <div className="flex flex-wrap justify-between gap-2 border-t-2 border-ink pt-3 text-[11px] font-bold uppercase tracking-caps">
+              <a href={player.profileUrl} target="_blank" rel="noopener noreferrer" className="text-campo hover:text-ink">
+                Scheda su fantacalcio.it ↗
+              </a>
+              {tm?.found && (
+                <a
+                  href={`https://www.transfermarkt.it/x/verletzungen/spieler/${tm.tmId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-campo hover:text-ink"
+                >
+                  Storico Transfermarkt ↗
+                </a>
+              )}
+            </div>
           </div>
         </Modal>
       )}

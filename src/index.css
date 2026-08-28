@@ -7,3 +7,12 @@ body,
 #root {
   height: 100%;
 }
+
+body {
+  @apply bg-paper font-sans text-ink;
+}
+
+/* I numeri (prezzi, FVM, crediti) devono incolonnarsi come in una tabella stampata. */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}

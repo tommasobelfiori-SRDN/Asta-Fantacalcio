@@ -7,11 +7,27 @@ export const ROLE_LABELS = {
   A: 'Attaccante',
 }
 
+export const ROLE_LABELS_PLURAL = {
+  P: 'Portieri',
+  D: 'Difensori',
+  C: 'Centrocampisti',
+  A: 'Attaccanti',
+}
+
+// Quadratino ruolo in stile almanacco: bordo e lettera nel colore maglia.
 export const ROLE_BADGE_CLASSES = {
-  P: 'bg-amber-100 text-amber-800 border-amber-300',
-  D: 'bg-sky-100 text-sky-800 border-sky-300',
-  C: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-  A: 'bg-rose-100 text-rose-800 border-rose-300',
+  P: 'border-ocra text-ocra',
+  D: 'border-azzurro text-azzurro',
+  C: 'border-campo text-campo',
+  A: 'border-granata text-granata',
+}
+
+// Variante piena (rosa in sidebar, slot con giocatori presi).
+export const ROLE_FILL_CLASSES = {
+  P: 'border-ocra bg-ocra text-paper',
+  D: 'border-azzurro bg-azzurro text-paper',
+  C: 'border-campo bg-campo text-paper',
+  A: 'border-granata bg-granata text-paper',
 }
 
 // Formazione Classic standard: 3 portieri, 8 difensori, 8 centrocampisti, 6 attaccanti.

@@ -49,11 +49,12 @@ export function computeMaxRecommendedBudget(creditsRemaining, totalSlotsRemainin
 
 // Soglie calibrate sui percentili reali del listone 2026/27 (527 calciatori:
 // mediana 2.86, p75 3.54, p90 4.62, p95 5.79) — non soglie tonde a caso.
+// className colora testo del tag, dot il pallino che lo precede.
 export const CONVENIENCE_TIERS = [
-  { id: 'occasione', label: 'Occasione', min: 5.5, className: 'bg-emerald-100 text-emerald-800' },
-  { id: 'buon-rapporto', label: 'Buon rapporto', min: 3.5, className: 'bg-sky-100 text-sky-800' },
-  { id: 'nella-norma', label: 'Nella norma', min: 1.0, className: 'bg-slate-100 text-slate-700' },
-  { id: 'sopravvalutato', label: 'Sopravvalutato', min: -Infinity, className: 'bg-amber-100 text-amber-800' },
+  { id: 'occasione', label: 'Occasione', min: 5.5, className: 'text-campo', dot: 'bg-campo' },
+  { id: 'buon-rapporto', label: 'Buon rapporto', min: 3.5, className: 'text-azzurro', dot: 'bg-azzurro' },
+  { id: 'nella-norma', label: 'Nella norma', min: 1.0, className: 'text-muted', dot: 'bg-muted' },
+  { id: 'sopravvalutato', label: 'Sopravvalutato', min: -Infinity, className: 'text-ocra', dot: 'bg-ocra' },
 ]
 
 export function convenienceRatio(player) {
@@ -76,9 +77,11 @@ export function isPenaltyTaker(player) {
   return player.penaltyRank === 1 || player.penaltyRank === 2
 }
 
+// Medaglione "R" da schema tattico: pieno per il rigorista titolare,
+// solo bordo per la seconda scelta.
 export function penaltyRankBadge(player) {
-  if (player.penaltyRank === 1) return { label: 'Rigorista', className: 'bg-violet-100 text-violet-800' }
-  if (player.penaltyRank === 2) return { label: '2° rigorista', className: 'bg-violet-50 text-violet-600' }
+  if (player.penaltyRank === 1) return { title: 'Rigorista', className: 'border-campo bg-campo text-paper' }
+  if (player.penaltyRank === 2) return { title: '2º rigorista', className: 'border-campo text-campo' }
   return null
 }
 

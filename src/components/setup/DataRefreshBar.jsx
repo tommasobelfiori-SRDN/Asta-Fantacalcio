@@ -13,17 +13,21 @@ export default function DataRefreshBar() {
       <button
         onClick={() => fetchQuotazioni()}
         disabled={playersLoading}
-        className="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[2px] bg-ink text-[13px] font-bold uppercase tracking-caps text-paper shadow-press hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {playersLoading ? 'Aggiornamento in corso…' : 'Aggiorna quotazioni'}
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+          <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"></path>
+          <path d="M13.7 1.8v2.7h-2.7"></path>
+        </svg>
+        {playersLoading ? 'Aggiornamento…' : 'Aggiorna quotazioni'}
       </button>
-      <div className="text-center text-xs text-slate-400">
+      <div className="text-center font-mono text-[11px] text-muted">
         {playersUpdatedAt
           ? `${formatRelativeTime(playersUpdatedAt)} · ${playersCount} calciatori`
           : 'Quotazioni non ancora caricate'}
       </div>
       {playersError && (
-        <div className="rounded-md bg-rose-50 px-2 py-1.5 text-xs text-rose-700">{playersError}</div>
+        <div className="border-[1.5px] border-granata px-2.5 py-1.5 text-xs text-granata">{playersError}</div>
       )}
     </div>
   )

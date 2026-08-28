@@ -1,38 +1,40 @@
 import { useStore } from '../../store.js'
-import { getMySquad, getSlotsFilledByRole, getSlotsRemainingByRole } from '../../lib/engine.js'
-import { CLASSIC_ROLES, ROLE_LABELS, ROLE_BADGE_CLASSES } from '../../lib/roles.js'
+import { getMySquad, getSlotsFilledByRole } from '../../lib/engine.js'
+import { CLASSIC_ROLES, ROLE_LABELS_PLURAL, ROLE_BADGE_CLASSES, ROLE_FILL_CLASSES } from '../../lib/roles.js'
+import Badge from '../common/Badge.jsx'
 
 export default function RosterSlots() {
   const leagueConfig = useStore((s) => s.leagueConfig)
   const draftByPlayerId = useStore((s) => s.draftByPlayerId)
 
-  const mySquad = getMySquad(draftByPlayerId)
-  const filled = getSlotsFilledByRole(mySquad)
-  const remaining = getSlotsRemainingByRole(leagueConfig, filled)
+  const filled = getSlotsFilledByRole(getMySquad(draftByPlayerId))
 
   return (
-    <div className="rounded-lg border border-slate-200 p-3">
-      <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Slot per ruolo</div>
-      <div className="grid grid-cols-4 gap-2">
-        {CLASSIC_ROLES.map((role) => {
-          const required = leagueConfig.roles[role] || 0
-          const isComplete = remaining[role] === 0
-          return (
-            <div
-              key={role}
-              title={ROLE_LABELS[role]}
-              className={`rounded-md border px-2 py-2 text-center ${ROLE_BADGE_CLASSES[role]} ${
-                isComplete ? 'opacity-60' : ''
-              }`}
-            >
-              <div className="text-sm font-bold">{role}</div>
-              <div className="text-xs">
-                {filled[role]}/{required}
-              </div>
-            </div>
-          )
-        })}
+    <div className="flex flex-col">
+      <div className="border-b border-ink pb-1.5 text-[11px] font-bold uppercase tracking-caps text-ink">
+        Slot per ruolo
       </div>
+      {CLASSIC_ROLES.map((role, i) => {
+        const required = leagueConfig.roles[role] || 0
+        const count = filled[role] || 0
+        const isLast = i === CLASSIC_ROLES.length - 1
+        return (
+          <div
+            key={role}
+            className={`flex items-center gap-2.5 px-0.5 py-2 ${isLast ? '' : 'border-b border-hair'}`}
+          >
+            <Badge
+              className={`h-[22px] w-[22px] text-xs ${count > 0 ? ROLE_FILL_CLASSES[role] : ROLE_BADGE_CLASSES[role]}`}
+            >
+              {role}
+            </Badge>
+            <span className="flex-1 text-[13px]">{ROLE_LABELS_PLURAL[role]}</span>
+            <span className={`font-mono text-[13px] ${count >= required ? 'font-semibold text-campo' : ''}`}>
+              {count}/{required}
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }

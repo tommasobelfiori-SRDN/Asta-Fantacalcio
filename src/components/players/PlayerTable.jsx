@@ -26,16 +26,19 @@ export default function PlayerTable() {
 
   if (players.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
+      <div className="border-y-2 border-ink py-10 text-center font-serif text-[15px] italic text-muted">
         Nessuna quotazione caricata. Premi "Aggiorna quotazioni" per iniziare.
       </div>
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-      <div className="border-b border-slate-100 px-3 py-2 text-xs text-slate-400">{filtered.length} calciatori</div>
-      <ul className="max-h-[70vh] divide-y divide-slate-100 overflow-y-auto">
+    <div className="flex flex-col">
+      <div className="flex items-baseline justify-between border-b border-hair border-t-2 border-t-ink py-2 text-[10px] font-bold uppercase tracking-caps text-muted">
+        <span>Listone</span>
+        <span className="font-mono normal-case tracking-normal">{filtered.length} calciatori</span>
+      </div>
+      <ul className="max-h-[70vh] overflow-y-auto">
         {filtered.map((p) => (
           <PlayerRow key={p.id} player={p} />
         ))}
