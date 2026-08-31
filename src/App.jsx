@@ -9,6 +9,7 @@ import PlayerFilters from './components/players/PlayerFilters.jsx'
 import PlayerTable from './components/players/PlayerTable.jsx'
 import SuggestionsPanel from './components/suggestions/SuggestionsPanel.jsx'
 import LeagueConfigModal from './components/setup/LeagueConfigModal.jsx'
+import AuctionPanel from './components/auction/AuctionPanel.jsx'
 import UndoToast from './components/common/UndoToast.jsx'
 import { CLASSIC_ROLES, ROLE_BADGE_CLASSES } from './lib/roles.js'
 import { getMySquad, getSlotsFilledByRole, getCreditsRemaining, getAvailablePlayers } from './lib/engine.js'
@@ -135,7 +136,7 @@ export default function App() {
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden pb-16 lg:pb-0">
         <TabBar />
-        <div className="flex min-h-0 flex-1 flex-col px-4 py-3 lg:px-9 lg:py-4">
+        <div className="flex min-h-0 flex-1 flex-col px-4 py-3 lg:px-6 lg:py-4">
           {activeTab === 'cerca' ? (
             <div className="flex min-h-0 flex-1 flex-col gap-2">
               <PlayerFilters />
@@ -148,6 +149,11 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {/* Il banco d'asta chiede spazio: sotto i 1280px la scheda torna in finestra. */}
+      <aside className="hidden w-[360px] shrink-0 border-l-2 border-ink bg-card xl:block">
+        <AuctionPanel />
+      </aside>
 
       <MobileTabBar />
       {showLeagueConfigModal && <LeagueConfigModal />}

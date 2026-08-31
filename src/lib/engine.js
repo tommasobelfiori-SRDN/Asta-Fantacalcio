@@ -100,6 +100,107 @@ export function getAvailablePlayers(players, draftByPlayerId) {
   return players.filter((p) => !draftByPlayerId?.[p.id])
 }
 
+// --- Offerta consigliata sul singolo calciatore ---
+//
+// Il tetto globale dice quanto puoi spendere al massimo sul prossimo acquisto,
+// qualunque esso sia; qui rispondiamo alla domanda che ci si fa davvero mentre
+// il banditore rilancia: quanto vale la pena spendere per QUESTO.
+//
+// L'idea: guardare la rosa che realisticamente ti resta da comprare — per ogni
+// ruolo scoperto i migliori disponibili, tanti quanti gli slot mancanti — e
+// distribuire i crediti rimasti in proporzione alla QUOTAZIONE, non al FVM.
+// Il FVM misura il valore fantacalcistico e sovrappesa gli attaccanti (Malen 414
+// contro i 75 di Svilar), mentre i prezzi d'asta sono molto più compressi: usarlo
+// per ripartire il budget consiglierebbe 9 crediti per un portiere che il mercato
+// paga 18, cioè di non comprare mai portieri e difensori. La quotazione è già
+// calibrata sul mercato, quindi fa da base; il FVM entra come correttivo di
+// qualità, premiando chi rende più di quanto costa nel suo ruolo.
+//
+// Il risultato è una quota di budget, non una previsione di prezzo: dice quanto
+// puoi spingerti senza sbilanciare il resto della rosa.
+
+// Quanto si può spingere l'offerta sopra o sotto la quota base, in funzione di
+// quanto il calciatore rende rispetto agli altri obiettivi.
+const QUALITY_MIN = 0.75
+const QUALITY_MAX = 1.5
+
+function median(values) {
+  const sorted = values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b)
+  if (!sorted.length) return null
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+export function getTargetPool(availablePlayers, remainingByRole) {
+  const pool = []
+  for (const role of CLASSIC_ROLES) {
+    const slots = remainingByRole[role] || 0
+    if (slots > 0) pool.push(...getSuggestionsByRole(availablePlayers, role, slots))
+  }
+  return pool
+}
+
+export function computeSuggestedBid({ player, players, draftByPlayerId, leagueConfig }) {
+  const mySquad = getMySquad(draftByPlayerId)
+  const creditsRemaining = getCreditsRemaining(leagueConfig, mySquad)
+  const filled = getSlotsFilledByRole(mySquad)
+  const remainingByRole = getSlotsRemainingByRole(leagueConfig, filled)
+  const totalSlotsRemaining = getTotalSlotsRemaining(remainingByRole)
+  const maxBudget = computeMaxRecommendedBudget(creditsRemaining, totalSlotsRemaining)
+
+  if (remainingByRole[player.roleClassic] === 0) {
+    return { value: null, reason: 'ruolo-completo', maxBudget }
+  }
+  if (totalSlotsRemaining <= 0 || creditsRemaining <= 0) {
+    return { value: null, reason: 'rosa-completa', maxBudget }
+  }
+
+  const available = getAvailablePlayers(players, draftByPlayerId)
+  const pool = getTargetPool(available, remainingByRole)
+  // Il calciatore in esame entra nel conto anche se non è tra i migliori del suo
+  // ruolo: stiamo valutando lui, non la rosa ideale.
+  const valued = pool.some((p) => p.id === player.id) ? pool : [...pool, player]
+  const totalQuot = valued.reduce((sum, p) => sum + (p.quotazioneClassicAttuale || 0), 0)
+  const quot = player.quotazioneClassicAttuale || 0
+  if (!totalQuot || !quot) {
+    return { value: null, reason: 'senza-quotazione', maxBudget }
+  }
+
+  const share = quot / totalQuot
+
+  // Correttivo di qualità: quanto rende rispetto agli obiettivi, non in assoluto.
+  const poolMedian = median(valued.map((p) => convenienceRatio(p)))
+  const qualityOf = (p) => {
+    const r = convenienceRatio(p)
+    if (r == null || !poolMedian) return 1
+    return Math.min(QUALITY_MAX, Math.max(QUALITY_MIN, r / poolMedian))
+  }
+
+  // Senza normalizzare, i correttivi (in media sopra 1, perché gli obiettivi sono
+  // i migliori del ruolo) gonfiano il totale: seguendo tutti i consigli si
+  // spenderebbe più del budget. Dividendo per la media pesata dei correttivi, la
+  // somma delle offerte sull'intera rosa obiettivo torna a coincidere con i
+  // crediti disponibili — il consiglio resta sostenibile fino all'ultimo slot.
+  const weighted = valued.reduce(
+    (sum, p) => sum + ((p.quotazioneClassicAttuale || 0) / totalQuot) * qualityOf(p),
+    0
+  )
+  const quality = qualityOf(player) / (weighted || 1)
+
+  // Il tetto globale resta invalicabile: riserva un credito per ogni altro slot.
+  const raw = Math.round(creditsRemaining * share * quality)
+  const value = Math.max(1, Math.min(raw, maxBudget.value))
+
+  return {
+    value,
+    share,
+    quality,
+    // Rispetto al prezzo di listino: sopra vuol dire "vale un rilancio".
+    vsQuotazione: value - quot,
+    reason: value >= maxBudget.value ? 'al-tetto' : 'ok',
+    maxBudget,
+  }
+}
+
 export function getSuggestionsByRole(availablePlayers, role, limit = 5) {
   return availablePlayers
     .filter((p) => p.roleClassic === role)

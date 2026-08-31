@@ -48,17 +48,21 @@ class UpstreamError extends Error {
   }
 }
 
-async function fetchHtml(url) {
+// Transfermarkt serve contenuto diverso a chi non somiglia a un browser: senza
+// Accept/Accept-Language da navigatore la pagina di ricerca torna senza risultati.
+const BROWSER_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8',
+  'Cache-Control': 'no-cache',
+}
+
+async function fetchHtml(url, headers = BROWSER_HEADERS) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'FantacalcioAstaAssistant/1.0 (uso personale)',
-        'Accept-Language': 'it-IT,it;q=0.9',
-      },
-    })
+    const res = await fetch(url, { signal: controller.signal, headers })
     if (!res.ok) {
       throw new UpstreamError(`${url} ha risposto con status ${res.status}`)
     }
@@ -454,7 +458,10 @@ async function findTransfermarktPlayer(name, teamCode) {
       return { tmId, tmName: playerLink.attr('title') || playerLink.text().trim() }
     }
   }
-  return null // nessuna riga con la squadra giusta: meglio niente che un omonimo sbagliato
+  // Nessuna riga con la squadra giusta: meglio niente che un omonimo sbagliato.
+  // Il conteggio righe distingue "cercato e non trovato" da "pagina vuota o
+  // diversa da quella attesa", che vuol dire che la ricerca non ha risposto.
+  return { notFound: true, rowsSeen: rows.length, query }
 }
 
 // L'URL di Transfermarkt ignora lo slug testuale e usa solo l'id numerico finale
@@ -483,7 +490,10 @@ function parseInjuryHistory(html) {
 // fantacalcio.it restano comunque disponibili.
 async function fetchTransfermarktInjuries(name, teamCode) {
   const match = await findTransfermarktPlayer(name, teamCode)
-  if (!match) return { found: false }
+  if (!match || match.notFound) {
+    console.log('Transfermarkt: nessun match', JSON.stringify({ name, teamCode, ...(match || {}) }))
+    return { found: false, rowsSeen: match?.rowsSeen ?? null }
+  }
   const html = await fetchHtml(`https://www.transfermarkt.it/x/verletzungen/spieler/${match.tmId}`)
   return { found: true, tmId: match.tmId, tmName: match.tmName, injuries: parseInjuryHistory(html) }
 }

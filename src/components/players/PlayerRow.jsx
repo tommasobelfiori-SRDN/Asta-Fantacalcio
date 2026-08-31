@@ -9,9 +9,11 @@ import PlayerDetailsButton from './PlayerDetailsButton.jsx'
 import PrevSeasonStat, { PrevSeasonInline } from './PrevSeasonStat.jsx'
 
 function PlayerRow({ player }) {
-  // Selettore puntuale sulla propria voce: con 500+ righe, un click su UN
+  // Selettori puntuali sulla propria voce: con 500+ righe, un click su UN
   // giocatore non deve ri-renderizzare tutte le altre righe della lista.
   const draftEntry = useStore((s) => s.draftByPlayerId[player.id])
+  const isSelected = useStore((s) => s.selectedPlayerId === player.id)
+  const selectPlayer = useStore((s) => s.selectPlayer)
   const ratio = convenienceRatio(player)
   const tier = convenienceTier(player)
   const penaltyBadge = penaltyRankBadge(player)
@@ -21,9 +23,10 @@ function PlayerRow({ player }) {
 
   return (
     <li
-      className={`flex items-center gap-3 border-b border-hair px-1 py-2.5 ${
-        isMine ? 'bg-campo/[0.07]' : isTaken ? 'opacity-45' : ''
-      }`}
+      onClick={() => selectPlayer(player)}
+      className={`flex cursor-pointer items-center gap-3 border-b border-hair px-1 py-2.5 ${
+        isSelected ? 'bg-ink/[0.06] ring-1 ring-inset ring-ink/25' : 'hover:bg-ink/[0.03]'
+      } ${isMine ? 'bg-campo/[0.07]' : isTaken ? 'opacity-45' : ''}`}
     >
       <Badge className={`h-[26px] w-[26px] text-[13px] ${ROLE_BADGE_CLASSES[player.roleClassic]}`}>
         {player.roleClassic}
@@ -52,8 +55,12 @@ function PlayerRow({ player }) {
         </div>
       </div>
       <PrevSeasonStat stat={player.prevSeason} season={player.prevSeason?.season} />
-      <div className="flex shrink-0 items-center gap-2">
-        <PlayerDetailsButton player={player} />
+      {/* Il click sulle azioni non deve cambiare anche la selezione del pannello. */}
+      <div className="flex shrink-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        {/* Su schermi larghi i dettagli stanno nel pannello: la finestra serve solo sotto. */}
+        <span className="xl:hidden">
+          <PlayerDetailsButton player={player} />
+        </span>
         <PlayerActionButtons player={player} draftEntry={draftEntry} />
       </div>
     </li>

@@ -37,6 +37,8 @@ export const useStore = create(
       activeTab: 'cerca', // 'cerca' | 'suggerimenti'
       showLeagueConfigModal: false,
       lastAction: null, // { playerId, previousEntry, label } — per l'UndoToast
+      // Calciatore aperto nel pannello "in asta ora" (solo su schermi larghi).
+      selectedPlayerId: null,
       // Cache di dettagli calciatore recuperati on-demand (non tutti i 500+ insieme):
       // { [id]: { status: 'loading'|'ready'|'error', data?, error? } }
       playerDetailsById: {},
@@ -57,6 +59,13 @@ export const useStore = create(
             playersError: err.message || 'Impossibile recuperare le quotazioni.',
           })
         }
+      },
+
+      // Selezionare un calciatore ne carica anche la scheda: durante l'asta i
+      // dati devono essere già lì quando servono, non dopo un secondo click.
+      selectPlayer: (player) => {
+        set({ selectedPlayerId: player?.id ?? null })
+        if (player?.profileUrl) get().fetchPlayerDetails(player)
       },
 
       // --- dettaglio calciatore on-demand ---
