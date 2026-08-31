@@ -20,6 +20,7 @@ const cheerio = require('cheerio')
 const QUOTAZIONI_URL = 'https://www.fantacalcio.it/quotazioni-fantacalcio'
 const RIGORISTI_URL = 'https://www.fantacalcio.it/rigoristi-serie-a'
 const STATISTICHE_URL = 'https://www.fantacalcio.it/statistiche-serie-a'
+const INDISPONIBILI_URL = 'https://www.fantacalcio.it/indisponibili-serie-a'
 const FETCH_TIMEOUT_MS = 20_000
 const MAX_INVALID_ROW_RATIO = 0.1
 const CLASSIC_ROLE_MAP = { p: 'P', d: 'D', c: 'C', a: 'A' }
@@ -251,6 +252,72 @@ function parseStatistiche(html, minExpectedRows, season) {
   return { statsById, warnings }
 }
 
+// Chi è fermo ADESSO: infortunati, squalificati e diffidati, una card per squadra
+// con le voci in `strong.item-name` e la spiegazione in prosa accanto.
+//
+// La nota è testo editoriale ("out per una lesione..., rientro previsto a
+// ottobre"): non provo a ricavarne date o durate, che sarebbe interpretazione
+// fragile — la riporto com'è, perché è già scritta per essere letta al volo.
+// Il collegamento col listone è per nome + squadra: entrambe le pagine vengono
+// da fantacalcio.it e usano la stessa convenzione ("Sulemana K.").
+const STATUS_BY_LABEL = [
+  [/infortunat/i, 'infortunato'],
+  [/squalificat/i, 'squalificato'],
+  [/diffidat/i, 'diffidato'],
+]
+
+function normalizeName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function statusKey(teamName, playerName) {
+  return `${normalizeName(teamName)}|${normalizeName(playerName)}`
+}
+
+function parseIndisponibili(html, minExpectedTeams) {
+  const $ = cheerio.load(html)
+  const teamCards = $('.team-card')
+  const warnings = []
+  const statusByKey = new Map()
+
+  if (teamCards.length < minExpectedTeams) {
+    warnings.push(
+      `Pagina indisponibili: trovate solo ${teamCards.length} squadre (attese almeno ${minExpectedTeams}) — stato dei calciatori ignorato`
+    )
+    return { statusByKey, warnings }
+  }
+
+  teamCards.each((_, teamEl) => {
+    const $team = $(teamEl)
+    const teamName = $team.find('.team-name').first().text().trim()
+    if (!teamName) return
+
+    $team.find('.col').each((__, colEl) => {
+      const $col = $(colEl)
+      const labelText = $col.find('header').first().text()
+      const found = STATUS_BY_LABEL.find(([re]) => re.test(labelText))
+      if (!found) return
+      const tipo = found[1]
+
+      $col.find('li').each((___, li) => {
+        const $li = $(li)
+        const playerName = $li.find('.item-name').first().text().trim()
+        if (!playerName) return
+        const nota = $li.find('.item-description').first().text().replace(/\s+/g, ' ').trim()
+        // Un calciatore può comparire in più categorie: tengo la prima, che è
+        // la più penalizzante nell'ordine in cui il sito le presenta.
+        const key = statusKey(teamName, playerName)
+        if (!statusByKey.has(key)) statusByKey.set(key, { tipo, nota: nota || null })
+      })
+    })
+  })
+
+  return { statusByKey, warnings }
+}
+
 async function quotazioniHandler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Metodo non consentito.' })
@@ -258,7 +325,7 @@ async function quotazioniHandler(req, res) {
   }
   try {
     const season = previousSeasonLabel()
-    const [quotazioniHtml, rigoristiHtml, statisticheHtml] = await Promise.all([
+    const [quotazioniHtml, rigoristiHtml, statisticheHtml, indisponibiliHtml] = await Promise.all([
       fetchHtml(QUOTAZIONI_URL),
       fetchHtml(RIGORISTI_URL).catch((err) => {
         console.error('Errore recupero rigoristi (non bloccante):', err)
@@ -266,6 +333,10 @@ async function quotazioniHandler(req, res) {
       }),
       fetchHtml(`${STATISTICHE_URL}/${season}`).catch((err) => {
         console.error(`Errore recupero statistiche ${season} (non bloccante):`, err)
+        return null
+      }),
+      fetchHtml(INDISPONIBILI_URL).catch((err) => {
+        console.error('Errore recupero indisponibili (non bloccante):', err)
         return null
       }),
     ])
@@ -296,14 +367,32 @@ async function quotazioniHandler(req, res) {
       ]
     }
 
+    let statusByKey = new Map()
+    let statusWarnings = []
+    if (indisponibiliHtml) {
+      const parsed = parseIndisponibili(indisponibiliHtml, MIN_EXPECTED_TEAMS.value())
+      statusByKey = parsed.statusByKey
+      statusWarnings = parsed.warnings
+    } else {
+      statusWarnings = [
+        'Impossibile recuperare infortunati e squalificati: il resto dei dati è comunque disponibile.',
+      ]
+    }
+    // Le due pagine chiamano le squadre in modo diverso (sigla contro nome
+    // esteso): la chiave dello stato si ricostruisce dal nome completo.
+    const teamNameByCode = {}
+    for (const [code, keyword] of Object.entries(TEAM_KEYWORDS)) teamNameByCode[code] = keyword
+
     for (const player of players) {
       player.penaltyRank = penaltyRankById.get(player.id) ?? null
       // Assente per chi non ha giocato in Serie A quella stagione (neopromossi,
       // arrivi dall'estero, giovani): il frontend lo mostra come "esordiente".
       player.prevSeason = statsById.get(player.id) ?? null
+      const teamName = teamNameByCode[player.team]
+      player.status = teamName ? (statusByKey.get(statusKey(teamName, player.name)) ?? null) : null
     }
 
-    const allWarnings = [...warnings, ...rigoristiWarnings, ...statsWarnings]
+    const allWarnings = [...warnings, ...rigoristiWarnings, ...statsWarnings, ...statusWarnings]
     res.status(200).json({
       players,
       count: players.length,
@@ -398,10 +487,12 @@ function parsePlayerDetails(html) {
 
 const TM_SEARCH_URL = 'https://www.transfermarkt.it/schnellsuche/ergebnis/schnellsuche'
 
-// Parola chiave distintiva per ciascuna squadra, usata per confermare il match:
-// Transfermarkt scrive il nome ufficiale per esteso (es. "ACF Fiorentina", "AS
-// Roma", "AC Milan"), quindi si verifica che lo contenga, non l'uguaglianza.
-const TM_TEAM_KEYWORDS = {
+// Parola chiave distintiva per ciascuna squadra, usata per riconoscere la stessa
+// squadra scritta in modi diversi: Transfermarkt usa il nome ufficiale per esteso
+// ("ACF Fiorentina", "AS Roma", "AC Milan"), le pagine fantacalcio.it il nome
+// breve ("Fiorentina"), il listone la sigla ("FIO"). Si verifica che il nome
+// contenga la parola chiave, non l'uguaglianza.
+const TEAM_KEYWORDS = {
   ATA: 'Atalanta',
   BOL: 'Bologna',
   CAG: 'Cagliari',
@@ -438,7 +529,7 @@ function extractTmPlayerId(href) {
 }
 
 async function findTransfermarktPlayer(name, teamCode) {
-  const teamKeyword = TM_TEAM_KEYWORDS[teamCode]
+  const teamKeyword = TEAM_KEYWORDS[teamCode]
   if (!teamKeyword) return null
 
   const query = cleanSearchName(name)

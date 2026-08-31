@@ -15,6 +15,9 @@ export default function PlayerTable() {
       if (filters.role !== 'all' && p.roleClassic !== filters.role) return false
       if (filters.onlyAvailable && draftByPlayerId[p.id]) return false
       if (filters.onlyPenaltyTakers && !isPenaltyTaker(p)) return false
+      // I diffidati giocano: fuori solo chi è davvero fermo.
+      if (filters.hideUnavailable && (p.status?.tipo === 'infortunato' || p.status?.tipo === 'squalificato'))
+        return false
       if (search && !`${p.name} ${p.team}`.toLowerCase().includes(search)) return false
       return true
     })

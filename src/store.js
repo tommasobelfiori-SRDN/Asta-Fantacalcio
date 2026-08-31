@@ -11,6 +11,7 @@ const DEFAULT_FILTERS = {
   role: 'all', // 'all' | 'P' | 'D' | 'C' | 'A'
   onlyAvailable: true,
   onlyPenaltyTakers: false,
+  hideUnavailable: false,
   sortBy: 'fvm', // 'fvm' | 'prezzo' | 'nome'
 }
 

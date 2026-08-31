@@ -3,6 +3,7 @@ import { useStore } from '../../store.js'
 import { ROLE_LABELS } from '../../lib/roles.js'
 import { formatAvg } from '../../lib/format.js'
 import Modal from '../common/Modal.jsx'
+import { STATUS_MARKS } from '../common/Badge.jsx'
 
 // Le voci cambiano senso col ruolo: per un portiere contano gol subiti e rigori
 // parati, per tutti gli altri gol e assist.
@@ -94,6 +95,27 @@ export default function PlayerDetailsButton({ player }) {
           onClose={() => setOpen(false)}
         >
           <div className="flex flex-col gap-5 text-sm">
+            {player.status && (
+              <div
+                className={`border-l-[3px] px-3 py-2.5 ${
+                  player.status.tipo === 'diffidato'
+                    ? 'border-l-ocra bg-ocra/[0.08]'
+                    : 'border-l-granata bg-granata/[0.08]'
+                }`}
+              >
+                <div
+                  className={`text-[11px] font-bold uppercase tracking-caps ${
+                    player.status.tipo === 'diffidato' ? 'text-ocra' : 'text-granata'
+                  }`}
+                >
+                  {STATUS_MARKS[player.status.tipo]?.label ?? player.status.tipo}
+                </div>
+                {player.status.nota && (
+                  <p className="mt-1 text-[12px] leading-relaxed text-ink">{player.status.nota}</p>
+                )}
+              </div>
+            )}
+
             {/* Il rendimento dell'anno scorso arriva col listone: è già qui,
                 senza attendere il caricamento della scheda. */}
             {prev ? (

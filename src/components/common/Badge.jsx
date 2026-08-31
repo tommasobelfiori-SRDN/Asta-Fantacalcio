@@ -23,6 +23,27 @@ export function PenaltyMedallion({ badge }) {
   )
 }
 
+// Chi è fermo adesso. Croce da infermeria per l'infortunio, × per la squalifica,
+// ! per la diffida (a rischio, ma in campo): si legge scorrendo il listone.
+export const STATUS_MARKS = {
+  infortunato: { glyph: '+', label: 'Infortunato', className: 'border-granata bg-granata text-paper' },
+  squalificato: { glyph: '×', label: 'Squalificato', className: 'border-granata text-granata' },
+  diffidato: { glyph: '!', label: 'Diffidato', className: 'border-ocra text-ocra' },
+}
+
+export function StatusMedallion({ status }) {
+  const mark = status && STATUS_MARKS[status.tipo]
+  if (!mark) return null
+  return (
+    <span
+      title={status.nota ? `${mark.label} · ${status.nota}` : mark.label}
+      className={`inline-flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full border-[1.5px] text-[11px] font-extrabold leading-none ${mark.className}`}
+    >
+      {mark.glyph}
+    </span>
+  )
+}
+
 // Tag di convenienza: pallino + etichetta + rapporto, niente pillole colorate.
 export function ConvenienceTag({ tier, ratioText }) {
   if (!tier) return null

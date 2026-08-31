@@ -3,7 +3,7 @@ import { useStore } from '../../store.js'
 import { computeSuggestedBid, penaltyRankBadge, hasReliableAverage } from '../../lib/engine.js'
 import { ROLE_LABELS, ROLE_BADGE_CLASSES } from '../../lib/roles.js'
 import { formatAvg } from '../../lib/format.js'
-import Badge from '../common/Badge.jsx'
+import Badge, { STATUS_MARKS } from '../common/Badge.jsx'
 
 // Pannello del calciatore in asta: durante una serata d'asta il banditore chiama
 // un nome e servono subito prezzo consigliato, rendimento e infortuni, senza
@@ -82,6 +82,27 @@ export default function AuctionPanel() {
           {penalty && <span className="text-campo"> · {penalty.title}</span>}
         </div>
       </div>
+
+      {/* Chi è fermo adesso conta più dello storico: sta sopra al prezzo, perché
+          cambia la decisione prima ancora di guardare quanto offrire. */}
+      {player.status && (
+        <div
+          className={`border-l-[3px] px-3 py-2.5 ${
+            player.status.tipo === 'diffidato' ? 'border-l-ocra bg-ocra/[0.08]' : 'border-l-granata bg-granata/[0.08]'
+          }`}
+        >
+          <div
+            className={`text-[11px] font-bold uppercase tracking-caps ${
+              player.status.tipo === 'diffidato' ? 'text-ocra' : 'text-granata'
+            }`}
+          >
+            {STATUS_MARKS[player.status.tipo]?.label ?? player.status.tipo}
+          </div>
+          {player.status.nota && (
+            <p className="mt-1 text-[12px] leading-relaxed text-ink">{player.status.nota}</p>
+          )}
+        </div>
+      )}
 
       {/* Il numero che serve mentre si rilancia. */}
       {suggested != null ? (

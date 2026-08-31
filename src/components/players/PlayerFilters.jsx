@@ -65,6 +65,15 @@ export default function PlayerFilters() {
         />
         Solo rigoristi
       </label>
+      <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+        <input
+          type="checkbox"
+          checked={filters.hideUnavailable}
+          onChange={(e) => setFilters({ hideUnavailable: e.target.checked })}
+          className="h-3.5 w-3.5 accent-ink"
+        />
+        Nascondi indisponibili
+      </label>
     </div>
   )
 }

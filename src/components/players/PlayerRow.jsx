@@ -3,7 +3,7 @@ import { useStore } from '../../store.js'
 import { ROLE_BADGE_CLASSES } from '../../lib/roles.js'
 import { convenienceRatio, convenienceTier, penaltyRankBadge } from '../../lib/engine.js'
 import { formatRatio } from '../../lib/format.js'
-import Badge, { PenaltyMedallion, ConvenienceTag } from '../common/Badge.jsx'
+import Badge, { PenaltyMedallion, ConvenienceTag, StatusMedallion } from '../common/Badge.jsx'
 import PlayerActionButtons from './PlayerActionButtons.jsx'
 import PlayerDetailsButton from './PlayerDetailsButton.jsx'
 import PrevSeasonStat, { PrevSeasonInline } from './PrevSeasonStat.jsx'
@@ -39,6 +39,7 @@ function PlayerRow({ player }) {
             {player.name}
           </span>
           <PenaltyMedallion badge={penaltyBadge} />
+          <StatusMedallion status={player.status} />
         </div>
         <div className="flex flex-wrap items-center gap-x-2 font-mono text-[11px] text-muted">
           <span>
