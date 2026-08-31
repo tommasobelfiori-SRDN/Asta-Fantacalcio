@@ -1,10 +1,12 @@
 /*
  * Cloud Functions per l'assistente asta fantacalcio.
  *
- * `quotazioni`: recupera due pagine pubbliche di fantacalcio.it (nessun login
+ * `quotazioni`: recupera tre pagine pubbliche di fantacalcio.it (nessun login
  * richiesto) e le trasforma in un elenco JSON di calciatori: quotazioni (ruoli,
- * prezzi, FVM Classic e Mantra) e rigoristi (gerarchia dei tiratori di rigore per
- * squadra), unite per id calciatore. Chiamata dal bottone "Aggiorna quotazioni".
+ * prezzi, FVM Classic e Mantra), rigoristi (gerarchia dei tiratori di rigore per
+ * squadra) e statistiche dell'ULTIMA STAGIONE CONCLUSA (presenze, medie, gol,
+ * assist, cartellini), unite per id calciatore. Chiamata dal bottone "Aggiorna
+ * quotazioni".
  *
  * `dettagliGiocatore`: recupera la scheda di UN calciatore specifico, on-demand,
  * quando l'utente vuole approfondire durante l'asta (vedi commento più sotto).
@@ -17,6 +19,7 @@ const cheerio = require('cheerio')
 
 const QUOTAZIONI_URL = 'https://www.fantacalcio.it/quotazioni-fantacalcio'
 const RIGORISTI_URL = 'https://www.fantacalcio.it/rigoristi-serie-a'
+const STATISTICHE_URL = 'https://www.fantacalcio.it/statistiche-serie-a'
 const FETCH_TIMEOUT_MS = 20_000
 const MAX_INVALID_ROW_RATIO = 0.1
 const CLASSIC_ROLE_MAP = { p: 'P', d: 'D', c: 'C', a: 'A' }
@@ -26,6 +29,17 @@ const CLASSIC_ROLE_MAP = { p: 'P', d: 'D', c: 'C', a: 'A' }
 // Ritarabili senza redeploy via functions/.env.
 const MIN_EXPECTED_ROWS = defineInt('MIN_EXPECTED_ROWS', { default: 400 }) // oggi ~527 calciatori
 const MIN_EXPECTED_TEAMS = defineInt('MIN_EXPECTED_TEAMS', { default: 15 }) // 20 squadre Serie A
+const MIN_EXPECTED_STATS_ROWS = defineInt('MIN_EXPECTED_STATS_ROWS', { default: 400 }) // ~663 a fine stagione
+
+// Etichetta dell'ultima stagione CONCLUSA, nel formato del sito ("2025-26").
+// Il campionato inizia in agosto: da luglio in poi la stagione in corso è
+// quella che apre nell'anno solare corrente, quindi la conclusa è la precedente.
+function previousSeasonLabel(now = new Date()) {
+  const year = now.getFullYear()
+  const seasonStartYear = now.getMonth() >= 6 ? year : year - 1 // getMonth: 6 = luglio
+  const prev = seasonStartYear - 1
+  return `${prev}-${String(prev + 1).slice(2)}`
+}
 
 class UpstreamError extends Error {
   constructor(message, status = 502) {
@@ -60,9 +74,12 @@ async function fetchHtml(url) {
   }
 }
 
+// L'id sta in fondo all'URL del profilo (".../fiorentina/kean/2097"), ma nelle
+// pagine di una stagione passata segue un suffisso stagione
+// (".../roma/malen/5585/2025-26"): va saltato, altrimenti l'id non si estrae.
 function extractPlayerId(href) {
   if (!href) return null
-  const match = href.match(/\/(\d+)\/?$/)
+  const match = href.match(/\/(\d+)(?:\/\d{4}-\d{2})?\/?$/)
   return match ? match[1] : null
 }
 
@@ -170,16 +187,81 @@ function parseRigoristi(html, minExpectedTeams) {
   return { penaltyRankById, warnings }
 }
 
+// Statistiche dell'ultima stagione conclusa: stessa struttura `tr.player-row`
+// delle quotazioni, ma con le colonne di rendimento. La stagione si sceglie dal
+// PERCORSO (`/statistiche-serie-a/2025-26`); una query string verrebbe ignorata
+// e restituirebbe la stagione in corso — errore silenzioso, quindi mai usarla.
+//
+// Come i rigoristi, è un arricchimento: un problema qui non deve far fallire le
+// quotazioni. Le medie sono numeri italiani ("6,72") e i rigori una frazione
+// ("3 / 4"), quindi non passano da parseNumber.
+const STAT_COLS = {
+  presenze: 'pg',
+  gol: 'gol',
+  golSubiti: 'gs',
+  rigoriParati: 'rp',
+  assist: 'ass',
+  ammonizioni: 'amm',
+  espulsioni: 'esp',
+}
+
+function parseStatistiche(html, minExpectedRows, season) {
+  const $ = cheerio.load(html)
+  const rows = $('tr.player-row')
+  const warnings = []
+  const statsById = new Map()
+
+  if (rows.length < minExpectedRows) {
+    warnings.push(
+      `Statistiche ${season}: trovate solo ${rows.length} righe (attese almeno ${minExpectedRows}) — dati stagione precedente ignorati, probabile cambio di struttura`
+    )
+    return { statsById, warnings }
+  }
+
+  rows.each((_, el) => {
+    try {
+      const $row = $(el)
+      const id = extractPlayerId($row.find('a.player-name').attr('href'))
+      if (!id || statsById.has(id)) return
+
+      const cell = (key) => $row.find(`[data-col-key="${key}"]`).text().trim()
+      const stat = { season }
+      for (const [field, key] of Object.entries(STAT_COLS)) {
+        stat[field] = parseNumber(cell(key))
+      }
+      stat.mediaVoto = parseItalianNumber(cell('mv'))
+      stat.fantamedia = parseItalianNumber(cell('mfv'))
+
+      // "3 / 4" = rigori segnati su calciati.
+      const rig = cell('rig').match(/(\d+)\s*\/\s*(\d+)/)
+      stat.rigoriSegnati = rig ? Number(rig[1]) : null
+      stat.rigoriCalciati = rig ? Number(rig[2]) : null
+
+      // Chi non ha mai giocato in Serie A quella stagione non porta informazione.
+      if (stat.presenze) statsById.set(id, stat)
+    } catch (rowErr) {
+      warnings.push(`Statistiche ${season}: riga scartata (${rowErr.message})`)
+    }
+  })
+
+  return { statsById, warnings }
+}
+
 async function quotazioniHandler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Metodo non consentito.' })
     return
   }
   try {
-    const [quotazioniHtml, rigoristiHtml] = await Promise.all([
+    const season = previousSeasonLabel()
+    const [quotazioniHtml, rigoristiHtml, statisticheHtml] = await Promise.all([
       fetchHtml(QUOTAZIONI_URL),
       fetchHtml(RIGORISTI_URL).catch((err) => {
         console.error('Errore recupero rigoristi (non bloccante):', err)
+        return null
+      }),
+      fetchHtml(`${STATISTICHE_URL}/${season}`).catch((err) => {
+        console.error(`Errore recupero statistiche ${season} (non bloccante):`, err)
         return null
       }),
     ])
@@ -197,14 +279,31 @@ async function quotazioniHandler(req, res) {
         'Impossibile recuperare i dati sui rigoristi: le quotazioni restano comunque disponibili senza questa informazione.',
       ]
     }
-    for (const player of players) {
-      player.penaltyRank = penaltyRankById.get(player.id) ?? null
+
+    let statsById = new Map()
+    let statsWarnings = []
+    if (statisticheHtml) {
+      const parsed = parseStatistiche(statisticheHtml, MIN_EXPECTED_STATS_ROWS.value(), season)
+      statsById = parsed.statsById
+      statsWarnings = parsed.warnings
+    } else {
+      statsWarnings = [
+        `Impossibile recuperare le statistiche ${season}: le quotazioni restano comunque disponibili senza questa informazione.`,
+      ]
     }
 
-    const allWarnings = [...warnings, ...rigoristiWarnings]
+    for (const player of players) {
+      player.penaltyRank = penaltyRankById.get(player.id) ?? null
+      // Assente per chi non ha giocato in Serie A quella stagione (neopromossi,
+      // arrivi dall'estero, giovani): il frontend lo mostra come "esordiente".
+      player.prevSeason = statsById.get(player.id) ?? null
+    }
+
+    const allWarnings = [...warnings, ...rigoristiWarnings, ...statsWarnings]
     res.status(200).json({
       players,
       count: players.length,
+      previousSeason: season,
       fetchedAt: new Date().toISOString(),
       warnings: allWarnings.length ? allWarnings.slice(0, 20) : undefined,
     })

@@ -1,7 +1,31 @@
 import { useState } from 'react'
 import { useStore } from '../../store.js'
 import { ROLE_LABELS } from '../../lib/roles.js'
+import { formatAvg } from '../../lib/format.js'
 import Modal from '../common/Modal.jsx'
+
+// Le voci cambiano senso col ruolo: per un portiere contano gol subiti e rigori
+// parati, per tutti gli altri gol e assist.
+function prevSeasonEntries(stat, role) {
+  const base = [
+    ['Presenze', stat.presenze],
+    ['Media voto', formatAvg(stat.mediaVoto)],
+  ]
+  const specific =
+    role === 'P'
+      ? [
+          ['Gol subiti', stat.golSubiti],
+          ['Rigori parati', stat.rigoriParati],
+        ]
+      : [
+          ['Gol', stat.gol],
+          ['Assist', stat.assist],
+        ]
+  const rigori =
+    stat.rigoriCalciati > 0 ? [['Rigori', `${stat.rigoriSegnati}/${stat.rigoriCalciati}`]] : []
+  const cartellini = [['Ammonizioni', stat.ammonizioni], ['Espulsioni', stat.espulsioni]]
+  return [...base, ...specific, ...rigori, ...cartellini].filter(([, v]) => v != null && v !== '—')
+}
 
 const STATUS_LABELS = {
   titolare: 'Titolare',
@@ -47,6 +71,7 @@ export default function PlayerDetailsButton({ player }) {
   }
 
   const tm = detail?.data?.transfermarkt
+  const prev = player.prevSeason
 
   return (
     <>
@@ -69,6 +94,41 @@ export default function PlayerDetailsButton({ player }) {
           onClose={() => setOpen(false)}
         >
           <div className="flex flex-col gap-5 text-sm">
+            {/* Il rendimento dell'anno scorso arriva col listone: è già qui,
+                senza attendere il caricamento della scheda. */}
+            {prev ? (
+              <div className="flex flex-col">
+                <div className="flex items-baseline justify-between border-b border-ink pb-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-caps">Stagione {prev.season}</span>
+                  <span className="font-mono text-[10px] text-muted">ultima conclusa</span>
+                </div>
+                <div className="flex items-stretch gap-3 border-b border-hair py-3">
+                  <div className="flex flex-1 flex-col items-center justify-center border-[1.5px] border-campo py-2">
+                    <span className="font-mono text-3xl font-semibold leading-none text-campo">
+                      {formatAvg(prev.fantamedia)}
+                    </span>
+                    <span className="mt-1 text-[10px] font-bold uppercase tracking-caps text-campo">Fantamedia</span>
+                  </div>
+                  <ul className="flex-1">
+                    {prevSeasonEntries(prev, player.roleClassic).map(([label, value]) => (
+                      <li
+                        key={label}
+                        className="flex items-baseline justify-between border-b border-hair py-1 last:border-b-0"
+                      >
+                        <span className="text-[12px] text-muted">{label}</span>
+                        <span className="font-mono text-[13px] font-semibold">{value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <p className="border-b border-hair pb-3 font-serif text-[13px] italic text-muted">
+                Nessuna presenza in Serie A nell'ultima stagione: esordiente, arrivo dall'estero o rientro da un
+                prestito.
+              </p>
+            )}
+
             {(!detail || detail.status === 'loading') && (
               <p className="font-serif italic text-muted">Caricamento…</p>
             )}
@@ -77,24 +137,12 @@ export default function PlayerDetailsButton({ player }) {
 
             {detail?.status === 'ready' && (
               <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-baseline justify-between border-[1.5px] border-ink px-3.5 py-2.5">
-                    <span className="text-[10px] font-bold uppercase tracking-caps text-muted">Media voto</span>
-                    <span className="font-mono text-2xl font-semibold">
-                      {detail.data.mediaVoto ? String(detail.data.mediaVoto).replace('.', ',') : '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between border-[1.5px] border-campo px-3.5 py-2.5">
-                    <span className="text-[10px] font-bold uppercase tracking-caps text-campo">Fantamedia</span>
-                    <span className="font-mono text-2xl font-semibold text-campo">
-                      {detail.data.fantamedia ? String(detail.data.fantamedia).replace('.', ',') : '—'}
-                    </span>
-                  </div>
-                </div>
-
                 <div className="flex flex-col">
-                  <div className="border-b border-ink pb-1.5 text-[11px] font-bold uppercase tracking-caps">
-                    Stagione in corso
+                  <div className="flex items-baseline justify-between border-b border-ink pb-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-caps">Stagione in corso</span>
+                    <span className="font-mono text-[10px] text-muted">
+                      MV {formatAvg(detail.data.mediaVoto)} · FM {formatAvg(detail.data.fantamedia)}
+                    </span>
                   </div>
                   <ul>
                     {Object.entries(STATUS_LABELS).map(([key, label]) => (

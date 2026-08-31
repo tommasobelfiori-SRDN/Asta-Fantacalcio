@@ -73,6 +73,15 @@ export function convenienceTier(player) {
 // player.penaltyRank viene dalla pagina rigoristi di fantacalcio.it: 1 = rigorista
 // titolare della squadra, 2 = secondo tiratore, 3+ = terza scelta (raramente tira,
 // non mostrata come badge). null = non tra i rigoristi indicati.
+// Sotto questa soglia una media dice poco: chi ha giocato 2-3 partite può avere
+// una fantamedia altissima per un episodio fortunato, e non è confrontabile con
+// chi ha retto un campionato intero. Non la nascondiamo, la segnaliamo.
+export const MIN_PRESENZE_AFFIDABILI = 10
+
+export function hasReliableAverage(stat) {
+  return (stat?.presenze ?? 0) >= MIN_PRESENZE_AFFIDABILI
+}
+
 export function isPenaltyTaker(player) {
   return player.penaltyRank === 1 || player.penaltyRank === 2
 }

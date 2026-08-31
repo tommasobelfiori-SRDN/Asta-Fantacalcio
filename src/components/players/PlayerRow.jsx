@@ -6,6 +6,7 @@ import { formatRatio } from '../../lib/format.js'
 import Badge, { PenaltyMedallion, ConvenienceTag } from '../common/Badge.jsx'
 import PlayerActionButtons from './PlayerActionButtons.jsx'
 import PlayerDetailsButton from './PlayerDetailsButton.jsx'
+import PrevSeasonStat, { PrevSeasonInline } from './PrevSeasonStat.jsx'
 
 function PlayerRow({ player }) {
   // Selettore puntuale sulla propria voce: con 500+ righe, un click su UN
@@ -39,6 +40,9 @@ function PlayerRow({ player }) {
         <div className="flex flex-wrap items-center gap-x-2 font-mono text-[11px] text-muted">
           <span>
             {player.team} · {player.quotazioneClassicAttuale} cr · FVM {player.fvmClassic}
+            <span className="lg:hidden">
+              <PrevSeasonInline stat={player.prevSeason} />
+            </span>
           </span>
           {isTaken ? (
             <span className="font-sans text-[11px] font-bold uppercase tracking-caps">Preso da un avversario</span>
@@ -47,6 +51,7 @@ function PlayerRow({ player }) {
           )}
         </div>
       </div>
+      <PrevSeasonStat stat={player.prevSeason} season={player.prevSeason?.season} />
       <div className="flex shrink-0 items-center gap-2">
         <PlayerDetailsButton player={player} />
         <PlayerActionButtons player={player} draftEntry={draftEntry} />

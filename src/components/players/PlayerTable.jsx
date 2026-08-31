@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../../store.js'
-import { isPenaltyTaker } from '../../lib/engine.js'
+import { isPenaltyTaker, hasReliableAverage } from '../../lib/engine.js'
+import { formatSeasonShort } from '../../lib/format.js'
 import PlayerRow from './PlayerRow.jsx'
 
 export default function PlayerTable() {
@@ -20,9 +21,20 @@ export default function PlayerTable() {
     return list.sort((a, b) => {
       if (filters.sortBy === 'nome') return a.name.localeCompare(b.name)
       if (filters.sortBy === 'prezzo') return (b.quotazioneClassicAttuale ?? 0) - (a.quotazioneClassicAttuale ?? 0)
+      // Chi non ha giocato in Serie A l'anno scorso finisce in fondo, non in cima.
+      // Stessa sorte per le medie su pochissime partite: una fantamedia da 9,50
+      // in una sola presenza non regge il confronto con un campionato intero.
+      if (filters.sortBy === 'fantamedia') {
+        const rank = (p) => (hasReliableAverage(p.prevSeason) ? 1 : 0)
+        if (rank(a) !== rank(b)) return rank(b) - rank(a)
+        return (b.prevSeason?.fantamedia ?? -1) - (a.prevSeason?.fantamedia ?? -1)
+      }
+      if (filters.sortBy === 'gol') return (b.prevSeason?.gol ?? -1) - (a.prevSeason?.gol ?? -1)
       return (b.fvmClassic ?? 0) - (a.fvmClassic ?? 0)
     })
   }, [players, draftByPlayerId, filters])
+
+  const seasonLabel = formatSeasonShort(players.find((p) => p.prevSeason)?.prevSeason?.season)
 
   if (players.length === 0) {
     return (
@@ -34,8 +46,9 @@ export default function PlayerTable() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-baseline justify-between border-b border-hair border-t-2 border-t-ink py-2 text-[10px] font-bold uppercase tracking-caps text-muted">
-        <span>Listone</span>
+      <div className="flex items-baseline gap-3 border-b border-hair border-t-2 border-t-ink py-2 text-[10px] font-bold uppercase tracking-caps text-muted">
+        <span className="flex-1">Listone</span>
+        {seasonLabel && <span className="hidden w-[104px] text-right lg:block">FM {seasonLabel}</span>}
         <span className="font-mono normal-case tracking-normal">{filtered.length} calciatori</span>
       </div>
       <ul className="min-h-0 flex-1 overflow-y-auto">

@@ -1,9 +1,13 @@
 import { useStore } from '../../store.js'
 import { CLASSIC_ROLES, ROLE_LABELS } from '../../lib/roles.js'
+import { formatSeasonShort } from '../../lib/format.js'
 
 export default function PlayerFilters() {
   const filters = useStore((s) => s.filters)
   const setFilters = useStore((s) => s.setFilters)
+  const seasonLabel = formatSeasonShort(
+    useStore((s) => s.players.find((p) => p.prevSeason)?.prevSeason?.season)
+  )
 
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 py-1">
@@ -38,6 +42,8 @@ export default function PlayerFilters() {
         className="cursor-pointer bg-transparent text-xs font-bold uppercase tracking-caps text-ink focus:outline-none"
       >
         <option value="fvm">Ordina · FVM</option>
+        <option value="fantamedia">Ordina · Fantamedia {seasonLabel}</option>
+        <option value="gol">Ordina · Gol {seasonLabel}</option>
         <option value="prezzo">Ordina · Quotazione</option>
         <option value="nome">Ordina · Nome</option>
       </select>
