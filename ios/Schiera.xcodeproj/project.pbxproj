@@ -1,0 +1,354 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		006C9AFF5C6DAE01157B8C1F /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D17560121A27371D1CC0E5 /* API.swift */; };
+		03222572D37B00375CA241F8 /* FormazioneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADB6B17229F0F2522028BDD1 /* FormazioneView.swift */; };
+		0B2BF02A6AF2A266B0D27EF4 /* ClaudeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF64FE91FA064C354BCD05A6 /* ClaudeService.swift */; };
+		0FBDF7872EAA27C134B36A5A /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75166B2CD957A95872DDFBC5 /* Store.swift */; };
+		26DBA6EED592C13579500867 /* ImpostazioniView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855A2F46F1CB58B481943C69 /* ImpostazioniView.swift */; };
+		338F06FB4B92B0AA1505253F /* RosaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2F8843DE9FF21165F1F529 /* RosaView.swift */; };
+		97B15344737F81F8F1472A8F /* LineupEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3939DC9C8ED34D85AB88CF2 /* LineupEngine.swift */; };
+		A6E3B06DB792428E4485F5C4 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DDC445C320341A09350F1C /* Models.swift */; };
+		B899458267162897F15D721A /* SchieraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EBD44EA8075199FB5CD5A69 /* SchieraApp.swift */; };
+		B920E13DB998D3C6112D325D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E3DB83A03762381F1C29B5 /* Theme.swift */; };
+		B9899BE4B92A44A5E94D0072 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2428BE426F79172CB4B71A /* Notifications.swift */; };
+		FC0AF51EEED4A5E00A8F4E22 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3014F6C03335653DD675EF60 /* RootView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		17B1B8E653E1F4143CD1DABF /* Schiera.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Schiera.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1EBD44EA8075199FB5CD5A69 /* SchieraApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchieraApp.swift; sourceTree = "<group>"; };
+		2E2F8843DE9FF21165F1F529 /* RosaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosaView.swift; sourceTree = "<group>"; };
+		3014F6C03335653DD675EF60 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		75166B2CD957A95872DDFBC5 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		75DDC445C320341A09350F1C /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		855A2F46F1CB58B481943C69 /* ImpostazioniView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpostazioniView.swift; sourceTree = "<group>"; };
+		A3939DC9C8ED34D85AB88CF2 /* LineupEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineupEngine.swift; sourceTree = "<group>"; };
+		ADB6B17229F0F2522028BDD1 /* FormazioneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormazioneView.swift; sourceTree = "<group>"; };
+		B5D17560121A27371D1CC0E5 /* API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
+		DF64FE91FA064C354BCD05A6 /* ClaudeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeService.swift; sourceTree = "<group>"; };
+		E3E3DB83A03762381F1C29B5 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		EE2428BE426F79172CB4B71A /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
+		FD17EE6A75AF30F488D421C5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		13ACE40C4FB1DA7360C62F22 /* Schiera */ = {
+			isa = PBXGroup;
+			children = (
+				B5D17560121A27371D1CC0E5 /* API.swift */,
+				DF64FE91FA064C354BCD05A6 /* ClaudeService.swift */,
+				FD17EE6A75AF30F488D421C5 /* Info.plist */,
+				A3939DC9C8ED34D85AB88CF2 /* LineupEngine.swift */,
+				75DDC445C320341A09350F1C /* Models.swift */,
+				EE2428BE426F79172CB4B71A /* Notifications.swift */,
+				1EBD44EA8075199FB5CD5A69 /* SchieraApp.swift */,
+				75166B2CD957A95872DDFBC5 /* Store.swift */,
+				E3E3DB83A03762381F1C29B5 /* Theme.swift */,
+				54B7C43E3DAAD1DA4DC360B2 /* Views */,
+			);
+			path = Schiera;
+			sourceTree = "<group>";
+		};
+		14B238D3C263A564B3AB7071 = {
+			isa = PBXGroup;
+			children = (
+				13ACE40C4FB1DA7360C62F22 /* Schiera */,
+				31107E36D439FD9E15BAE05F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		31107E36D439FD9E15BAE05F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				17B1B8E653E1F4143CD1DABF /* Schiera.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		54B7C43E3DAAD1DA4DC360B2 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				ADB6B17229F0F2522028BDD1 /* FormazioneView.swift */,
+				855A2F46F1CB58B481943C69 /* ImpostazioniView.swift */,
+				3014F6C03335653DD675EF60 /* RootView.swift */,
+				2E2F8843DE9FF21165F1F529 /* RosaView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0CB6EA3A57FEB92AFB46B708 /* Schiera */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F10476C4CD6D63F9ED3653E9 /* Build configuration list for PBXNativeTarget "Schiera" */;
+			buildPhases = (
+				E8E3585854598087C05EDDB2 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Schiera;
+			packageProductDependencies = (
+			);
+			productName = Schiera;
+			productReference = 17B1B8E653E1F4143CD1DABF /* Schiera.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		41EA7DD81F77B5A52D42A8C4 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = C07D1872E9B37B4F6934770E /* Build configuration list for PBXProject "Schiera" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 14B238D3C263A564B3AB7071;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 31107E36D439FD9E15BAE05F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0CB6EA3A57FEB92AFB46B708 /* Schiera */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E8E3585854598087C05EDDB2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				006C9AFF5C6DAE01157B8C1F /* API.swift in Sources */,
+				0B2BF02A6AF2A266B0D27EF4 /* ClaudeService.swift in Sources */,
+				03222572D37B00375CA241F8 /* FormazioneView.swift in Sources */,
+				26DBA6EED592C13579500867 /* ImpostazioniView.swift in Sources */,
+				97B15344737F81F8F1472A8F /* LineupEngine.swift in Sources */,
+				A6E3B06DB792428E4485F5C4 /* Models.swift in Sources */,
+				B9899BE4B92A44A5E94D0072 /* Notifications.swift in Sources */,
+				FC0AF51EEED4A5E00A8F4E22 /* RootView.swift in Sources */,
+				338F06FB4B92B0AA1505253F /* RosaView.swift in Sources */,
+				B899458267162897F15D721A /* SchieraApp.swift in Sources */,
+				0FBDF7872EAA27C134B36A5A /* Store.swift in Sources */,
+				B920E13DB998D3C6112D325D /* Theme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		646232A246EFDFA8E7A84D31 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Schiera/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Schiera;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Tommaso Belfiori";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tommasobelfiori.Schiera;
+				PRODUCT_NAME = Schiera;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BE4431E0B271859D7CF06B00 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C5492BBF73868811BBCC7492 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F1ABF00401690F7ABCF20687 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Schiera/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Schiera;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Tommaso Belfiori";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tommasobelfiori.Schiera;
+				PRODUCT_NAME = Schiera;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C07D1872E9B37B4F6934770E /* Build configuration list for PBXProject "Schiera" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C5492BBF73868811BBCC7492 /* Debug */,
+				BE4431E0B271859D7CF06B00 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F10476C4CD6D63F9ED3653E9 /* Build configuration list for PBXNativeTarget "Schiera" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				646232A246EFDFA8E7A84D31 /* Debug */,
+				F1ABF00401690F7ABCF20687 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 41EA7DD81F77B5A52D42A8C4 /* Project object */;
+}

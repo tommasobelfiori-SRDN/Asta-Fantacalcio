@@ -1,0 +1,39 @@
+name: Schiera
+options:
+  bundleIdPrefix: com.tommasobelfiori
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+targets:
+  Schiera:
+    type: application
+    platform: iOS
+    sources:
+      - Schiera
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tommasobelfiori.Schiera
+        PRODUCT_NAME: Schiera
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Schiera
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.sports
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Tommaso Belfiori"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+    info:
+      path: Schiera/Info.plist
+      properties:
+        CFBundleDisplayName: Schiera
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # Il refresh in background tiene fresche le probabili e riempie la
+        # notifica del sabato con la formazione già calcolata.
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.tommasobelfiori.schiera.refresh
+        UIBackgroundModes:
+          - fetch

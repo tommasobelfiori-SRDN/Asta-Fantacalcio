@@ -21,6 +21,10 @@
         "source": "/api/dettagli-giocatore",
         "function": { "functionId": "dettagliGiocatore", "region": "europe-west1" }
       },
+      {
+        "source": "/api/probabili",
+        "function": { "functionId": "probabili", "region": "europe-west1" }
+      },
       { "source": "**", "destination": "/index.html" }
     ]
   },

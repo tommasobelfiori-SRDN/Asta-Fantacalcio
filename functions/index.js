@@ -21,6 +21,7 @@ const QUOTAZIONI_URL = 'https://www.fantacalcio.it/quotazioni-fantacalcio'
 const RIGORISTI_URL = 'https://www.fantacalcio.it/rigoristi-serie-a'
 const STATISTICHE_URL = 'https://www.fantacalcio.it/statistiche-serie-a'
 const INDISPONIBILI_URL = 'https://www.fantacalcio.it/indisponibili-serie-a'
+const PROBABILI_URL = 'https://www.fantacalcio.it/probabili-formazioni-serie-a'
 const FETCH_TIMEOUT_MS = 20_000
 const MAX_INVALID_ROW_RATIO = 0.1
 const CLASSIC_ROLE_MAP = { p: 'P', d: 'D', c: 'C', a: 'A' }
@@ -316,6 +317,91 @@ function parseIndisponibili(html, minExpectedTeams) {
   })
 
   return { statusByKey, warnings }
+}
+
+// --- Probabili formazioni: il cuore del companion settimanale ---
+//
+// Una card per squadra con modulo, XI titolare (`ul.player-list.starters`) e
+// panchina (`ul.player-list.reserves`); ogni voce porta il link al profilo — lo
+// stesso id stabile del listone, quindi il join è per ID, non per nome — e la
+// percentuale di titolarità della redazione. Gli orari delle partite nella
+// pagina sono placeholder riempiti via JavaScript: non li estraiamo apposta,
+// meglio nessun orario che un orario finto.
+function parseProbabili(html, minExpectedTeams) {
+  const $ = cheerio.load(html)
+  const teamCards = $('.team-card')
+  const warnings = []
+
+  if (teamCards.length < minExpectedTeams) {
+    throw new UpstreamError(
+      `Probabili formazioni: trovate solo ${teamCards.length} squadre (attese almeno ${minExpectedTeams}) — probabile cambio di struttura della pagina`
+    )
+  }
+
+  const teams = []
+  teamCards.each((_, teamEl) => {
+    const $team = $(teamEl)
+    const name = $team.find('.team-name').first().text().trim()
+    if (!name) return
+    const formation = $team.find('.team-formation').first().text().trim() || null
+
+    const readList = (selector) => {
+      const out = []
+      $team.find(selector).find('li.player-item').each((__, li) => {
+        const $li = $(li)
+        const link = $li.find('a.player-name').first()
+        const id = extractPlayerId(link.attr('href'))
+        const playerName = link.find('span').first().text().trim() || link.text().trim()
+        if (!id || !playerName) {
+          warnings.push(`Probabili ${name}: voce scartata ("${playerName}")`)
+          return
+        }
+        const pct = parseNumber($li.find('.progress-value').first().text().replace('%', ''))
+        out.push({ id, name: playerName, role: ($li.find('.role').attr('data-value') || '').toUpperCase() || null, pct })
+      })
+      return out
+    }
+
+    teams.push({
+      team: name,
+      formation,
+      starters: readList('ul.player-list.starters'),
+      reserves: readList('ul.player-list.reserves'),
+    })
+  })
+
+  const lastUpdate = $('.last-update').first().text().replace(/\s+/g, ' ').trim() || null
+  return { teams, lastUpdate, warnings }
+}
+
+async function probabiliHandler(req, res) {
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Metodo non consentito.' })
+    return
+  }
+  try {
+    const html = await fetchHtml(PROBABILI_URL)
+    const { teams, lastUpdate, warnings } = parseProbabili(html, MIN_EXPECTED_TEAMS.value())
+    // Indice piatto per il join lato client: id -> titolarità.
+    const byPlayerId = {}
+    for (const t of teams) {
+      for (const p of t.starters) byPlayerId[p.id] = { team: t.team, starter: true, pct: p.pct }
+      for (const p of t.reserves) if (!byPlayerId[p.id]) byPlayerId[p.id] = { team: t.team, starter: false, pct: p.pct }
+    }
+    res.status(200).json({
+      teams,
+      byPlayerId,
+      lastUpdate,
+      fetchedAt: new Date().toISOString(),
+      warnings: warnings.length ? warnings.slice(0, 20) : undefined,
+    })
+  } catch (err) {
+    console.error('Errore recupero probabili formazioni:', err)
+    const status = Number.isInteger(err.status) ? err.status : 500
+    res.status(status).json({
+      error: 'Impossibile recuperare le probabili formazioni in questo momento. Riprova più tardi.',
+    })
+  }
 }
 
 async function quotazioniHandler(req, res) {
@@ -624,6 +710,12 @@ exports.quotazioni = onRequest(
   quotazioniHandler
 )
 exports.quotazioniHandler = quotazioniHandler
+
+exports.probabili = onRequest(
+  { region: 'europe-west1', timeoutSeconds: 30, memory: '256MiB' },
+  probabiliHandler
+)
+exports.probabiliHandler = probabiliHandler
 
 exports.dettagliGiocatore = onRequest(
   { region: 'europe-west1', timeoutSeconds: 20, memory: '256MiB' },
