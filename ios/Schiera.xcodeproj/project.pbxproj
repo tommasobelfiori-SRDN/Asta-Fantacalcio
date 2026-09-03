@@ -112,6 +112,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					0CB6EA3A57FEB92AFB46B708 = {
+						DevelopmentTeam = H3MH59U2CA;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = C07D1872E9B37B4F6934770E /* Build configuration list for PBXProject "Schiera" */;
@@ -161,7 +165,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H3MH59U2CA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Schiera/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Schiera;
@@ -306,7 +312,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H3MH59U2CA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Schiera/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Schiera;

@@ -14,6 +14,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tommasobelfiori.Schiera
         PRODUCT_NAME: Schiera
+        DEVELOPMENT_TEAM: H3MH59U2CA
+        CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: 1.0.0
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: YES
