@@ -46,7 +46,10 @@ function TabBar() {
   const available = getAvailablePlayers(players, draftByPlayerId).length
 
   return (
-    <nav className="hidden items-end justify-between gap-4 border-b-2 border-ink bg-paper px-6 lg:flex">
+    /* Il pt allinea le etichette alla prima riga delle altre due colonne (24px
+       nella barra laterale, 20 nel banco d'asta): senza, restavano incollate al
+       bordo della finestra. */
+    <nav className="hidden items-end justify-between gap-4 border-b-2 border-ink bg-paper px-6 pt-5 lg:flex">
       <div className="flex gap-7">
         {TABS.map((t) => (
           <button
