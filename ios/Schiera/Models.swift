@@ -12,6 +12,8 @@ struct Player: Codable, Identifiable, Hashable {
     let penaltyRank: Int?
     let prevSeason: PrevSeason?
     let status: PlayerStatus?
+    // true se il backend non lo trova più in nessuna rosa di Serie A.
+    let ceduto: Bool?
 }
 
 struct PrevSeason: Codable, Hashable {

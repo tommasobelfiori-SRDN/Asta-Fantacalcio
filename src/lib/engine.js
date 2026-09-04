@@ -96,8 +96,14 @@ export function penaltyRankBadge(player) {
 
 // --- Pool disponibile e suggerimenti ---
 
+// I ceduti fuori dalla Serie A restano nel JSON (con `ceduto: true`) ma non
+// esistono più per l'asta: né in lista, né nei suggerimenti, né nel pool.
 export function getAvailablePlayers(players, draftByPlayerId) {
-  return players.filter((p) => !draftByPlayerId?.[p.id])
+  return players.filter((p) => !p.ceduto && !draftByPlayerId?.[p.id])
+}
+
+export function countCeduti(players) {
+  return players.reduce((n, p) => n + (p.ceduto ? 1 : 0), 0)
 }
 
 // --- Offerta consigliata sul singolo calciatore ---

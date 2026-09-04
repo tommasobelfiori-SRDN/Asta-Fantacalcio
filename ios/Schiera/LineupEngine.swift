@@ -19,6 +19,7 @@ enum LineupEngine {
     ]
 
     static func score(player: Player, prob: ProbEntry?) -> (score: Double, note: String?)? {
+        if player.ceduto == true { return nil }
         if let tipo = player.status?.tipo, tipo == "infortunato" || tipo == "squalificato" {
             return nil // fuori: non è una scelta, è un fatto
         }
@@ -58,7 +59,7 @@ enum LineupEngine {
                 slots.append(LineupSlot(player: player, prob: prob, score: result.score, note: result.note))
             } else {
                 excluded.append(LineupSlot(player: player, prob: prob, score: -1,
-                                           note: player.status?.tipo ?? "indisponibile"))
+                                           note: player.ceduto == true ? "ceduto" : (player.status?.tipo ?? "indisponibile")))
             }
         }
 

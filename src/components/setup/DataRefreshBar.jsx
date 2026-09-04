@@ -1,5 +1,6 @@
 import { useStore } from '../../store.js'
 import { formatRelativeTime } from '../../lib/format.js'
+import { countCeduti } from '../../lib/engine.js'
 
 export default function DataRefreshBar() {
   const fetchQuotazioni = useStore((s) => s.fetchQuotazioni)
@@ -7,6 +8,7 @@ export default function DataRefreshBar() {
   const playersError = useStore((s) => s.playersError)
   const playersUpdatedAt = useStore((s) => s.playersUpdatedAt)
   const playersCount = useStore((s) => s.players.length)
+  const ceduti = useStore((s) => countCeduti(s.players))
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -23,7 +25,7 @@ export default function DataRefreshBar() {
       </button>
       <div className="text-center font-mono text-[11px] text-muted">
         {playersUpdatedAt
-          ? `${formatRelativeTime(playersUpdatedAt)} · ${playersCount} calciatori`
+          ? `${formatRelativeTime(playersUpdatedAt)} · ${playersCount - ceduti} calciatori${ceduti ? ` · ${ceduti} ceduti` : ''}`
           : 'Quotazioni non ancora caricate'}
       </div>
       {playersError && (

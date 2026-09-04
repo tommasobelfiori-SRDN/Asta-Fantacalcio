@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useStore } from '../../store.js'
-import { isPenaltyTaker, hasReliableAverage } from '../../lib/engine.js'
+import { isPenaltyTaker, hasReliableAverage, countCeduti } from '../../lib/engine.js'
 import { formatSeasonShort } from '../../lib/format.js'
 import PlayerRow from './PlayerRow.jsx'
 
@@ -12,6 +12,8 @@ export default function PlayerTable() {
   const filtered = useMemo(() => {
     const search = filters.search.trim().toLowerCase()
     const list = players.filter((p) => {
+      // Ceduti fuori dalla Serie A: non si possono comprare, non si mostrano.
+      if (p.ceduto) return false
       if (filters.role !== 'all' && p.roleClassic !== filters.role) return false
       if (filters.onlyAvailable && draftByPlayerId[p.id]) return false
       if (filters.onlyPenaltyTakers && !isPenaltyTaker(p)) return false
@@ -38,6 +40,7 @@ export default function PlayerTable() {
   }, [players, draftByPlayerId, filters])
 
   const seasonLabel = formatSeasonShort(players.find((p) => p.prevSeason)?.prevSeason?.season)
+  const ceduti = countCeduti(players)
 
   if (players.length === 0) {
     return (
@@ -52,7 +55,10 @@ export default function PlayerTable() {
       <div className="flex items-baseline gap-3 border-b border-hair border-t-2 border-t-ink py-2 text-[10px] font-bold uppercase tracking-caps text-muted">
         <span className="flex-1">Listone</span>
         {seasonLabel && <span className="hidden w-[104px] text-right lg:block">FM {seasonLabel}</span>}
-        <span className="font-mono normal-case tracking-normal">{filtered.length} calciatori</span>
+        <span className="font-mono normal-case tracking-normal">
+          {filtered.length} calciatori
+          {ceduti > 0 && <span title="Non più in una rosa di Serie A: esclusi dal listone"> · {ceduti} ceduti esclusi</span>}
+        </span>
       </div>
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {filtered.map((p) => (

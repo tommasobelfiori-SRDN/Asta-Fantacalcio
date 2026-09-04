@@ -1,12 +1,13 @@
 /*
  * Cloud Functions per l'assistente asta fantacalcio.
  *
- * `quotazioni`: recupera tre pagine pubbliche di fantacalcio.it (nessun login
+ * `quotazioni`: recupera le pagine pubbliche di fantacalcio.it (nessun login
  * richiesto) e le trasforma in un elenco JSON di calciatori: quotazioni (ruoli,
  * prezzi, FVM Classic e Mantra), rigoristi (gerarchia dei tiratori di rigore per
- * squadra) e statistiche dell'ULTIMA STAGIONE CONCLUSA (presenze, medie, gol,
- * assist, cartellini), unite per id calciatore. Chiamata dal bottone "Aggiorna
- * quotazioni".
+ * squadra), statistiche dell'ULTIMA STAGIONE CONCLUSA (presenze, medie, gol,
+ * assist, cartellini), indisponibili, e le rose aggiornate col mercato per
+ * marcare chi è stato ceduto fuori dalla Serie A, unite per id calciatore.
+ * Chiamata dal bottone "Aggiorna quotazioni".
  *
  * `dettagliGiocatore`: recupera la scheda di UN calciatore specifico, on-demand,
  * quando l'utente vuole approfondire durante l'asta (vedi commento più sotto).
@@ -22,6 +23,11 @@ const RIGORISTI_URL = 'https://www.fantacalcio.it/rigoristi-serie-a'
 const STATISTICHE_URL = 'https://www.fantacalcio.it/statistiche-serie-a'
 const INDISPONIBILI_URL = 'https://www.fantacalcio.it/indisponibili-serie-a'
 const PROBABILI_URL = 'https://www.fantacalcio.it/probabili-formazioni-serie-a'
+const SQUADRE_URL = 'https://www.fantacalcio.it/serie-a/squadre'
+// Sotto questa soglia la pagina di una rosa è sospetta (restyling o errore) e
+// non la usiamo per giudicare nessuno: meglio un ceduto in più nel listone che
+// una squadra intera marcata per sbaglio.
+const MIN_EXPECTED_SQUAD_SIZE = 15
 const FETCH_TIMEOUT_MS = 20_000
 const MAX_INVALID_ROW_RATIO = 0.1
 const CLASSIC_ROLE_MAP = { p: 'P', d: 'D', c: 'C', a: 'A' }
@@ -86,6 +92,12 @@ async function fetchHtml(url, headers = BROWSER_HEADERS) {
 function extractPlayerId(href) {
   if (!href) return null
   const match = href.match(/\/(\d+)(?:\/\d{4}-\d{2})?\/?$/)
+  return match ? match[1] : null
+}
+
+// Lo slug della squadra sta nell'URL del profilo (".../serie-a/squadre/milan/pulisic/2423").
+function extractTeamSlug(profileUrl) {
+  const match = String(profileUrl || '').match(/\/serie-a\/squadre\/([^/]+)\//)
   return match ? match[1] : null
 }
 
@@ -155,6 +167,83 @@ function parsePlayers(html, minExpectedRows) {
   }
 
   return { players, warnings }
+}
+
+// --- Rose aggiornate col mercato ---
+//
+// Il listone delle quotazioni tiene dentro chi è stato ceduto fuori dalla
+// Serie A fino al successivo aggiornamento del sito, che può arrivare giorni
+// dopo la chiusura del mercato: in piena asta ci si ritrova a contrattare
+// calciatori che non esistono più. La pagina della rosa di ogni squadra invece
+// è già allineata, e linka il profilo di ogni calciatore in organico con lo
+// stesso id numerico del listone: chi non compare in nessuna rosa è ceduto.
+
+function parseSquadIds(html, slug) {
+  const $ = cheerio.load(html)
+  const ids = new Set()
+  const prefix = `/serie-a/squadre/${slug}/`
+  $(`a[href*="${prefix}"]`).each((_, el) => {
+    const href = $(el).attr('href') || ''
+    const rest = href.slice(href.indexOf(prefix) + prefix.length)
+    // Solo i profili ("<nome>/<id>"), non le pagine di squadra o le notizie.
+    if (!/^[^/]+\/\d+\/?$/.test(rest)) return
+    const id = extractPlayerId(href)
+    if (id) ids.add(id)
+  })
+  return ids
+}
+
+// Una richiesta per squadra, in parallelo. Ritorna dove gioca oggi ogni id
+// (slug della rosa che lo linka) e quali rose sono state lette con successo:
+// i calciatori di una rosa non letta non vengono giudicati.
+async function fetchSquads(players) {
+  const slugs = new Set()
+  for (const p of players) {
+    const slug = extractTeamSlug(p.profileUrl)
+    if (slug) slugs.add(slug)
+  }
+  const slugById = new Map()
+  const loadedSlugs = new Set()
+  const warnings = []
+  await Promise.all(
+    [...slugs].map(async (slug) => {
+      try {
+        const ids = parseSquadIds(await fetchHtml(`${SQUADRE_URL}/${slug}`), slug)
+        if (ids.size < MIN_EXPECTED_SQUAD_SIZE) {
+          warnings.push(`Rosa ${slug}: trovati solo ${ids.size} calciatori, pagina ignorata`)
+          return
+        }
+        loadedSlugs.add(slug)
+        for (const id of ids) slugById.set(id, slug)
+      } catch (err) {
+        warnings.push(`Rosa ${slug} non recuperata: ${err.message}`)
+      }
+    })
+  )
+  return { slugById, loadedSlugs, warnings }
+}
+
+// Marca `ceduto` chi non è più in nessuna rosa e aggiorna la squadra di chi è
+// passato a un altro club di Serie A (il listone mostra ancora la vecchia).
+function applySquads(players, { slugById, loadedSlugs }) {
+  const codeBySlug = new Map()
+  for (const p of players) {
+    const slug = extractTeamSlug(p.profileUrl)
+    if (slug && p.team && !codeBySlug.has(slug)) codeBySlug.set(slug, p.team)
+  }
+  let ceduti = 0
+  for (const p of players) {
+    const slug = extractTeamSlug(p.profileUrl)
+    if (!slug || !loadedSlugs.has(slug)) continue
+    const currentSlug = slugById.get(p.id)
+    if (!currentSlug) {
+      p.ceduto = true
+      ceduti += 1
+    } else if (currentSlug !== slug && codeBySlug.get(currentSlug)) {
+      p.team = codeBySlug.get(currentSlug)
+    }
+  }
+  return ceduti
 }
 
 // Ogni squadra è una .team-card con una .col "Rigori" contenente un <ol> ordinato
@@ -429,6 +518,11 @@ async function quotazioniHandler(req, res) {
 
     const { players, warnings } = parsePlayers(quotazioniHtml, MIN_EXPECTED_ROWS.value())
 
+    // Prima di tutto il resto: la squadra corretta serve anche al join degli
+    // indisponibili, che è per nome e squadra.
+    const squads = await fetchSquads(players)
+    const ceduti = applySquads(players, squads)
+
     let penaltyRankById = new Map()
     let rigoristiWarnings = []
     if (rigoristiHtml) {
@@ -478,10 +572,11 @@ async function quotazioniHandler(req, res) {
       player.status = teamName ? (statusByKey.get(statusKey(teamName, player.name)) ?? null) : null
     }
 
-    const allWarnings = [...warnings, ...rigoristiWarnings, ...statsWarnings, ...statusWarnings]
+    const allWarnings = [...warnings, ...squads.warnings, ...rigoristiWarnings, ...statsWarnings, ...statusWarnings]
     res.status(200).json({
       players,
       count: players.length,
+      ceduti,
       previousSeason: season,
       fetchedAt: new Date().toISOString(),
       warnings: allWarnings.length ? allWarnings.slice(0, 20) : undefined,

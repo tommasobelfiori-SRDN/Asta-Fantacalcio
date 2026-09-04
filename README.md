@@ -51,6 +51,8 @@ Per la distribuzione TestFlight: aprire il progetto in Xcode, impostare il propr
 
 I dati (ruoli, quotazioni, FVM) vengono letti dalla pagina pubblica `fantacalcio.it/quotazioni-fantacalcio`, non protetta da login. Il recupero avviene solo quando premi manualmente "Aggiorna quotazioni" — mai in automatico o in polling continuo. Se il sito cambia struttura, la funzione può smettere di funzionare finché i selettori non vengono aggiornati: **testa l'aggiornamento quotazioni qualche giorno prima dell'asta vera**, non la sera stessa.
 
+I calciatori **ceduti fuori dalla Serie A** restano nella pagina delle quotazioni finché il sito non la ripubblica, anche giorni dopo la chiusura del mercato. Per questo la function legge anche le venti pagine delle rose (`/serie-a/squadre/<squadra>`), aggiornate col mercato e con gli stessi id numerici del listone: chi non compare più in nessuna rosa arriva al client con `ceduto: true` ed è escluso da lista, suggerimenti e conti. Se una pagina rosa non si legge o ha meno di 15 calciatori, i suoi giocatori non vengono giudicati.
+
 ## Licenza
 
 MIT — vedi [LICENSE](LICENSE).

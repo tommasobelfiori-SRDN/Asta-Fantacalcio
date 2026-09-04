@@ -63,7 +63,9 @@ export default function AuctionPanel() {
   const prev = player.prevSeason
   const penalty = penaltyRankBadge(player)
   const tm = detail?.data?.transfermarkt
-  const suggested = bid?.value
+  // Un ceduto può essere ancora selezionato (era in lista prima dell'ultimo
+  // aggiornamento): niente consiglio, solo l'avviso.
+  const suggested = player.ceduto ? null : bid?.value
 
   const handleMine = (e) => {
     e.preventDefault()
@@ -109,8 +111,17 @@ export default function AuctionPanel() {
         </div>
       )}
 
+      {player.ceduto && (
+        <div className="border-l-[3px] border-l-granata bg-granata/[0.08] px-3 py-2.5">
+          <div className="text-[11px] font-bold uppercase tracking-caps text-granata">Ceduto</div>
+          <p className="mt-1 text-[12px] leading-relaxed text-ink">
+            Non compare più in nessuna rosa di Serie A su fantacalcio.it: non si può comprare.
+          </p>
+        </div>
+      )}
+
       {/* Il numero che serve mentre si rilancia. */}
-      {suggested != null ? (
+      {player.ceduto ? null : suggested != null ? (
         <div className="flex flex-col items-center gap-0.5 bg-campo px-4 py-3.5 text-paper">
           <span className="font-mono text-[32px] font-semibold leading-none">fino a {suggested} cr</span>
           <span className="text-[10px] font-bold uppercase tracking-caps">
