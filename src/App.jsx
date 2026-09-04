@@ -144,13 +144,12 @@ export default function App() {
               <PlayerFilters />
               <PlayerTable />
             </div>
-          ) : activeTab === 'avversari' ? (
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <OpponentsPanel />
-            </div>
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <SuggestionsPanel />
+            /* Queste due schede iniziano con un titolo, non con un campo:
+               attaccato alla barra sopra sembrerebbe tagliato. Lo stacco vale
+               solo qui — nella scheda Cerca lo spazio serve alla lista. */
+            <div className="min-h-0 flex-1 overflow-y-auto pt-2 lg:pt-3">
+              {activeTab === 'avversari' ? <OpponentsPanel /> : <SuggestionsPanel />}
             </div>
           )}
         </div>
