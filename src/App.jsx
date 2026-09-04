@@ -148,7 +148,7 @@ export default function App() {
             /* Queste due schede iniziano con un titolo, non con un campo:
                attaccato alla barra sopra sembrerebbe tagliato. Lo stacco vale
                solo qui — nella scheda Cerca lo spazio serve alla lista. */
-            <div className="min-h-0 flex-1 overflow-y-auto pt-2 lg:pt-3">
+            <div className="min-h-0 flex-1 overflow-y-auto pt-4 lg:pt-7">
               {activeTab === 'avversari' ? <OpponentsPanel /> : <SuggestionsPanel />}
             </div>
           )}

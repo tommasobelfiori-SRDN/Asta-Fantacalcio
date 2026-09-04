@@ -2,16 +2,16 @@ import { useMemo } from 'react'
 import { useStore } from '../../store.js'
 import { computeAnticipation } from '../../lib/engine.js'
 
-// Chi può ancora rilanciare sul calciatore in asta, e fin dove. Il numero in
-// alto risponde alla domanda che ci si fa quando il banditore conta: quanto
-// devo mettere per essere sicuro? Un credito sopra il tetto del più ricco tra
-// chi ha ancora uno slot libero in questo ruolo — se il tuo tetto lo permette.
+// Chi può ancora rilanciare sul calciatore in asta, e fin dove. La domanda che
+// ci si fa quando il banditore conta è "quanto devo mettere per essere sicuro?",
+// e la risposta non è una sola: dipende da chi resta in corsa. Per questo gli
+// avversari sono divisi in due liste — quelli che puoi togliere di mezzo, con
+// la cifra esatta che serve, e quelli che possono seguirti oltre il tuo tetto.
 //
-// Due cifre per avversario: il tetto (quanto PUÒ spendere, riservando un
-// credito per ogni altro slot da riempire) e la stima (quanto spenderebbe
-// seguendo lo stesso criterio della tua offerta consigliata). A inizio asta
-// i tetti sono tutti alti e conta la stima; verso la fine è il tetto a
-// decidere chi è ancora in corsa.
+// Due numeri per avversario: il TETTO (quanto può spendere, riservando un
+// credito per ogni altro slot da riempire) e la STIMA (quanto spenderebbe
+// seguendo lo stesso criterio della tua offerta consigliata). A inizio asta i
+// tetti sono tutti alti e conta la stima; verso la fine è il tetto a decidere.
 
 const OUT_REASON = {
   'ruolo-completo': 'ruolo pieno',
@@ -34,6 +34,56 @@ function Headline({ tone, value, title, note }) {
       {value != null && (
         <span className="shrink-0 font-mono text-[26px] font-semibold leading-none">{value}</span>
       )}
+    </div>
+  )
+}
+
+function RivalRow({ rival, role, beatable }) {
+  const slots = rival.remainingByRole[role]
+  return (
+    <li className="flex items-baseline gap-2 border-b border-hair py-1.5 last:border-b-0">
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[13px] font-semibold text-ink">{rival.name}</span>
+        <span className="font-mono text-[10px] text-muted">
+          {rival.remaining} cr · {slots} {role} liber{slots === 1 ? 'o' : 'i'}
+          {rival.withoutPrice > 0 && <span className="text-ocra"> · {rival.withoutPrice} senza prezzo</span>}
+        </span>
+      </span>
+      <span className={`w-11 text-right font-mono text-[14px] font-semibold ${beatable ? 'text-ink' : 'text-granata'}`}>
+        {rival.maxBid}
+      </span>
+      <span className="w-11 text-right font-mono text-[12px] text-muted">
+        {rival.estimate != null ? `~${rival.estimate}` : '—'}
+      </span>
+      {/* Per chi è battibile la cifra che chiude il discorso; per gli altri il
+          posto resta vuoto, perché non esiste una cifra che basti. */}
+      <span className={`w-11 text-right font-mono text-[13px] ${beatable ? 'font-semibold text-campo' : 'text-muted'}`}>
+        {beatable ? rival.needed : '—'}
+      </span>
+    </li>
+  )
+}
+
+function RivalGroup({ title, rivals, role, beatable, note }) {
+  if (!rivals.length) return null
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-baseline gap-2 border-b border-ink pb-1">
+        <span
+          className={`flex-1 text-[9px] font-bold uppercase tracking-caps ${beatable ? 'text-campo' : 'text-granata'}`}
+        >
+          {title} · {rivals.length}
+        </span>
+        <span className="w-11 text-right text-[9px] font-bold uppercase tracking-caps text-muted">Tetto</span>
+        <span className="w-11 text-right text-[9px] font-bold uppercase tracking-caps text-muted">Stima</span>
+        <span className="w-11 text-right text-[9px] font-bold uppercase tracking-caps text-muted">Servono</span>
+      </div>
+      <ul>
+        {rivals.map((r) => (
+          <RivalRow key={r.id} rival={r} role={role} beatable={beatable} />
+        ))}
+      </ul>
+      {note && <p className="pt-1 font-serif text-[11px] italic leading-snug text-muted">{note}</p>}
     </div>
   )
 }
@@ -65,12 +115,15 @@ export default function RivalsBlock({ player }) {
     )
   }
 
-  const { bid, threat, needed, feasible, covered, rivalMax } = result
-  const { contenders, outOfRace, topThreat, unassigned } = threat
+  const { bid, threat, superabili, fuoriPortata, covered, rivalMax } = result
+  const { outOfRace, unassigned } = threat
   const role = player.roleClassic
+  const inCorsa = superabili.length + fuoriPortata.length
+  // Fra i battibili basta superare il più ricco: gli altri hanno il tetto sotto.
+  const perTutti = superabili.length ? Math.max(...superabili.map((c) => c.needed)) : 0
 
   let headline
-  if (contenders.length === 0) {
+  if (inCorsa === 0) {
     headline = (
       <Headline
         tone="campo"
@@ -78,80 +131,61 @@ export default function RivalsBlock({ player }) {
         note="Ruolo pieno o crediti finiti per tutti gli avversari: parti dalla base."
       />
     )
-  } else if (covered) {
+  } else if (fuoriPortata.length === 0 && covered) {
     headline = (
       <Headline
         tone="campo"
-        value={`${needed} cr`}
-        title="Ti basta l'offerta consigliata"
-        note={`${topThreat.name} è il più ricco in corsa e non può superare ${rivalMax}.`}
+        value={`${perTutti} cr`}
+        title={`Li anticipi tutti e ${inCorsa}`}
+        note="L'offerta consigliata è già sopra il tetto di ognuno di loro."
       />
     )
-  } else if (feasible) {
+  } else if (fuoriPortata.length === 0) {
     headline = (
       <Headline
         tone="ink"
-        value={`${needed} cr`}
-        title="Per anticiparli tutti"
-        note={`${topThreat.name} può arrivare a ${rivalMax}: sono ${needed - (bid.value ?? 0)} cr sopra il consiglio.`}
+        value={`${perTutti} cr`}
+        title={`Per anticiparli tutti e ${inCorsa}`}
+        note={`Sono ${perTutti - (bid.value ?? 0)} cr sopra l'offerta consigliata.`}
       />
     )
-  } else if (rivalMax === bid.maxBudget.value) {
-    // Tipico a inizio asta, quando nessuno ha ancora speso: stesso tetto per
-    // tutti, e non è una sconfitta ma una gara alla pari.
-    headline = (
-      <Headline
-        tone="ocra"
-        value={`${rivalMax} cr`}
-        title={`Alla pari con ${topThreat.name}`}
-        note={`Stesso tetto: nessuno dei due può anticipare l'altro, decide chi lo vuole di più.`}
-      />
-    )
-  } else {
+  } else if (superabili.length === 0) {
     headline = (
       <Headline
         tone="granata"
         value={`${rivalMax} cr`}
-        title={`Non puoi anticipare ${topThreat.name}`}
-        note={`Può arrivare a ${rivalMax}, il tuo tetto è ${bid.maxBudget.value}. Se lo vuole davvero, lo prende.`}
+        title={`Nessuno dei ${inCorsa} è alla tua portata`}
+        note={`Il tuo tetto è ${bid.maxBudget.value}: se lo vogliono davvero, te lo portano via.`}
+      />
+    )
+  } else {
+    // "Oltre il tuo tetto" sarebbe impreciso a parità di crediti: chi ha il tuo
+    // stesso tetto non ti supera, ma nemmeno lo anticipi. Si dicono le cifre.
+    const nomi = fuoriPortata.map((c) => c.name)
+    headline = (
+      <Headline
+        tone="ocra"
+        value={`${superabili.length}/${inCorsa}`}
+        title="Puoi anticiparne solo una parte"
+        note={`${perTutti} cr per togliere di mezzo i battibili. ${nomi.join(', ')} ${
+          nomi.length === 1 ? 'arriva' : 'arrivano'
+        } fino a ${fuoriPortata[0].maxBid}, il tuo tetto è ${bid.maxBudget.value}.`}
       />
     )
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2.5">
       {headline}
 
-      {contenders.length > 0 && (
-        <ul>
-          <li className="flex items-baseline gap-2 border-b border-ink pb-1 text-[9px] font-bold uppercase tracking-caps text-muted">
-            <span className="flex-1">In corsa · {contenders.length}</span>
-            <span className="w-11 text-right">Tetto</span>
-            <span className="w-11 text-right">Stima</span>
-          </li>
-          {contenders.map((c) => (
-            <li key={c.id} className="flex items-baseline gap-2 border-b border-hair py-1.5 last:border-b-0">
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-[13px] font-semibold text-ink">{c.name}</span>
-                <span className="font-mono text-[10px] text-muted">
-                  {c.remaining} cr · {c.remainingByRole[role]} {role} liber{c.remainingByRole[role] === 1 ? 'o' : 'i'}
-                  {c.withoutPrice > 0 && <span className="text-ocra"> · {c.withoutPrice} senza prezzo</span>}
-                </span>
-              </span>
-              <span
-                className={`w-11 text-right font-mono text-[14px] font-semibold ${
-                  c.maxBid >= (bid.maxBudget.value || 0) ? 'text-granata' : 'text-ink'
-                }`}
-              >
-                {c.maxBid}
-              </span>
-              <span className="w-11 text-right font-mono text-[12px] text-muted">
-                {c.estimate != null ? `~${c.estimate}` : '—'}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <RivalGroup title="Puoi anticiparli" rivals={superabili} role={role} beatable />
+      <RivalGroup
+        title="Non puoi anticiparli"
+        rivals={fuoriPortata}
+        role={role}
+        beatable={false}
+        note="Nessuna cifra alla tua portata li esclude: al massimo arrivi al loro stesso tetto. Puoi solo sperare che si fermino prima."
+      />
 
       {outOfRace.length > 0 && (
         <p className="font-serif text-[12px] italic leading-relaxed text-muted">

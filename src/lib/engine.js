@@ -336,15 +336,27 @@ export function computeRivalThreat({ player, players, draftByPlayerId, leagueCon
 
 // Quanto serve per essere certi di prenderlo: un credito sopra il tetto del
 // più ricco tra chi può ancora rilanciare — se il tuo tetto lo permette.
+// Per battere con certezza un avversario serve un credito più del suo tetto.
+// Sapere che "il più ricco è fuori portata" non basta: durante l'asta conta chi
+// puoi togliere di mezzo e a che cifra, uno per uno, perché gli altri possono
+// mollare molto prima. Quindi i contendenti si dividono in due liste.
 export function computeAnticipation({ player, players, draftByPlayerId, leagueConfig }) {
   const bid = computeSuggestedBid({ player, players, draftByPlayerId, leagueConfig })
   const threat = computeRivalThreat({ player, players, draftByPlayerId, leagueConfig })
   const myMax = bid.maxBudget.value
+
+  const withNeeded = threat.contenders.map((c) => ({ ...c, needed: c.maxBid + 1 }))
+  // A parità di tetto non si anticipa nessuno: si arriva allo stesso muro.
+  const superabili = withNeeded.filter((c) => c.needed <= myMax)
+  const fuoriPortata = withNeeded.filter((c) => c.needed > myMax)
+
   const rivalMax = threat.topThreat?.maxBid ?? 0
   const needed = rivalMax + 1
   return {
     bid,
     threat,
+    superabili,
+    fuoriPortata,
     rivalMax,
     needed,
     feasible: needed <= myMax,
