@@ -34,6 +34,9 @@ export const ROLE_FILL_CLASSES = {
 export const DEFAULT_LEAGUE_CONFIG = {
   totalCredits: 500,
   roles: { P: 3, D: 8, C: 8, A: 6 },
+  // Le altre squadre della lega ({ id, name }): stessi crediti e stessi slot
+  // di tutti, servono per sapere chi può ancora rilanciare e fin dove.
+  opponents: [],
 }
 
 // Etichette dei ruoli Mantra (mostrati in tabella, non usati nel motore suggerimenti in v1).

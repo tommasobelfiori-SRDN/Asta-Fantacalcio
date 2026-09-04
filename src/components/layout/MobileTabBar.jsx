@@ -17,9 +17,20 @@ function StarIcon() {
   )
 }
 
+function UsersIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="5" r="2.5"></circle>
+      <path d="M1.5 13.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4"></path>
+      <path d="M11 3.2a2.5 2.5 0 0 1 0 3.6M12.5 9.7c1.3.5 2 1.7 2 3.8"></path>
+    </svg>
+  )
+}
+
 const TABS = [
   { id: 'cerca', label: 'Cerca', Icon: SearchIcon },
   { id: 'suggerimenti', label: 'Suggerimenti', Icon: StarIcon },
+  { id: 'avversari', label: 'Avversari', Icon: UsersIcon },
 ]
 
 export default function MobileTabBar() {

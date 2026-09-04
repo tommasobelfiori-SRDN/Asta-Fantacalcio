@@ -2,6 +2,8 @@
 
 Assistente personale per l'asta del fantacalcio: quotazioni ufficiali da fantacalcio.it, tracciamento di budget e rosa in tempo reale, suggerimenti sui migliori obiettivi rimanenti in base a chi hai già preso.
 
+Oltre alla tua rosa tiene il conto anche degli **avversari**: nelle impostazioni elenchi le altre squadre della lega e, quando un calciatore va a un altro, segni a chi e a quanto. Da lì in poi, su ogni nome in asta, il banco d'asta mostra chi può ancora rilanciare (serve uno slot libero nel ruolo), il suo tetto (crediti rimasti meno uno per ogni altro slot da riempire), una stima di quanto spenderebbe davvero, e la cifra che ti serve per anticiparli tutti. La scheda "Avversari" riepiloga crediti, slot e rose di ciascuno e permette di correggere gli acquisti segnati di fretta senza squadra o senza prezzo.
+
 Pensato per uso personale, un dispositivo per sessione — nessun account, nessuna sincronizzazione con altri partecipanti. Lo stato (configurazione lega, chi hai preso, prezzi pagati) resta salvato nel browser (`localStorage`); il bottone "Esporta stato" nella barra laterale permette un backup manuale o il passaggio a un altro dispositivo a metà asta.
 
 ## Stack

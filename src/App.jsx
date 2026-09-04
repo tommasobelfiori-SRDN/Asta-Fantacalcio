@@ -8,6 +8,7 @@ import RosterList from './components/dashboard/RosterList.jsx'
 import PlayerFilters from './components/players/PlayerFilters.jsx'
 import PlayerTable from './components/players/PlayerTable.jsx'
 import SuggestionsPanel from './components/suggestions/SuggestionsPanel.jsx'
+import OpponentsPanel from './components/opponents/OpponentsPanel.jsx'
 import LeagueConfigModal from './components/setup/LeagueConfigModal.jsx'
 import AuctionPanel from './components/auction/AuctionPanel.jsx'
 import UndoToast from './components/common/UndoToast.jsx'
@@ -17,6 +18,7 @@ import { getMySquad, getSlotsFilledByRole, getCreditsRemaining, getAvailablePlay
 const TABS = [
   { id: 'cerca', label: 'Cerca' },
   { id: 'suggerimenti', label: 'Suggerimenti' },
+  { id: 'avversari', label: 'Avversari' },
 ]
 
 const ROLE_TEXT_CLASSES = {
@@ -44,7 +46,7 @@ function TabBar() {
   const available = getAvailablePlayers(players, draftByPlayerId).length
 
   return (
-    <nav className="hidden items-end justify-between border-b-2 border-ink bg-paper px-9 lg:flex">
+    <nav className="hidden items-end justify-between gap-4 border-b-2 border-ink bg-paper px-6 lg:flex">
       <div className="flex gap-7">
         {TABS.map((t) => (
           <button
@@ -61,8 +63,8 @@ function TabBar() {
         ))}
       </div>
       {players.length > 0 && (
-        <span className="pb-2.5 font-mono text-xs text-muted">
-          {available} disponibili su {players.length}
+        <span className="shrink-0 whitespace-nowrap pb-2.5 font-mono text-xs text-muted">
+          {available} disponibili
         </span>
       )}
     </nav>
@@ -141,6 +143,10 @@ export default function App() {
             <div className="flex min-h-0 flex-1 flex-col gap-2">
               <PlayerFilters />
               <PlayerTable />
+            </div>
+          ) : activeTab === 'avversari' ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <OpponentsPanel />
             </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto">

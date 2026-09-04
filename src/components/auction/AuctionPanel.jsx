@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
-import { useStore } from '../../store.js'
+import { useEffect, useMemo, useState } from 'react'
+import { useStore, useOpponentName } from '../../store.js'
 import { computeSuggestedBid, penaltyRankBadge, hasReliableAverage } from '../../lib/engine.js'
 import { ROLE_LABELS, ROLE_BADGE_CLASSES } from '../../lib/roles.js'
 import { formatAvg } from '../../lib/format.js'
 import Badge, { STATUS_MARKS } from '../common/Badge.jsx'
+import TakenForm from '../players/TakenForm.jsx'
+import RivalsBlock from './RivalsBlock.jsx'
 
 // Pannello del calciatore in asta: durante una serata d'asta il banditore chiama
 // un nome e servono subito prezzo consigliato, rendimento e infortuni, senza
@@ -41,7 +43,6 @@ export default function AuctionPanel() {
   const draftByPlayerId = useStore((s) => s.draftByPlayerId)
   const leagueConfig = useStore((s) => s.leagueConfig)
   const markMine = useStore((s) => s.markMine)
-  const markTaken = useStore((s) => s.markTaken)
   const freePlayer = useStore((s) => s.freePlayer)
   const detail = useStore((s) => (selectedId ? s.playerDetailsById[selectedId] : null))
 
@@ -51,10 +52,14 @@ export default function AuctionPanel() {
     [player, players, draftByPlayerId, leagueConfig]
   )
   const [price, setPrice] = useState('')
+  // Il form "a un altro" si chiude da solo quando cambia il calciatore in asta.
+  const [assigning, setAssigning] = useState(false)
+  useEffect(() => setAssigning(false), [selectedId])
+  const entry = player ? draftByPlayerId[player.id] : null
+  const ownerName = useOpponentName(entry?.ownerId)
 
   if (!player) return <EmptyState />
 
-  const entry = draftByPlayerId[player.id]
   const prev = player.prevSeason
   const penalty = penaltyRankBadge(player)
   const tm = detail?.data?.transfermarkt
@@ -125,6 +130,8 @@ export default function AuctionPanel() {
           {BID_NOTE[bid?.reason] || 'Nessun consiglio disponibile.'}
         </div>
       )}
+
+      {!entry && suggested != null && <RivalsBlock player={player} />}
 
       <div className="grid grid-cols-3 gap-2.5">
         {[
@@ -228,7 +235,9 @@ export default function AuctionPanel() {
       {entry ? (
         <div className="flex items-center justify-between gap-3 border-t-2 border-ink pt-3">
           <span className="text-[11px] font-bold uppercase tracking-caps text-campo">
-            {entry.status === 'mine' ? `Preso da te · ${entry.price} cr` : 'Preso da un avversario'}
+            {entry.status === 'mine'
+              ? `Preso da te · ${entry.price} cr`
+              : `${ownerName ? `Preso da ${ownerName}` : 'Preso da un avversario'}${entry.price != null ? ` · ${entry.price} cr` : ''}`}
           </span>
           <button
             onClick={() => freePlayer(player.id, player.name)}
@@ -237,6 +246,13 @@ export default function AuctionPanel() {
             Libera
           </button>
         </div>
+      ) : assigning ? (
+        <TakenForm
+          player={player}
+          layout="panel"
+          onDone={() => setAssigning(false)}
+          onCancel={() => setAssigning(false)}
+        />
       ) : (
         <form onSubmit={handleMine} className="flex flex-col gap-2.5 border-t-2 border-ink pt-3">
           <div className="flex items-center gap-2.5">
@@ -258,7 +274,7 @@ export default function AuctionPanel() {
           </div>
           <button
             type="button"
-            onClick={() => markTaken(player)}
+            onClick={() => setAssigning(true)}
             className="h-11 rounded-[2px] border-[1.5px] border-ink text-[11px] font-bold uppercase tracking-caps text-ink hover:bg-ink/5"
           >
             A un altro

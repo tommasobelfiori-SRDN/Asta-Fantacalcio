@@ -17,9 +17,11 @@ function fmClass(fm) {
 
 export function PrevSeasonInline({ stat }) {
   if (!stat) return null
+  // Niente nowrap: su un telefono la riga è stretta e questo pezzo deve poter
+  // andare a capo invece di finire sotto i bottoni.
   return (
-    <span className="whitespace-nowrap">
-      · FM <span className={`font-semibold ${fmClass(stat.fantamedia)}`}>{formatAvg(stat.fantamedia)}</span>
+    <span>
+      {' '}· FM <span className={`font-semibold ${fmClass(stat.fantamedia)}`}>{formatAvg(stat.fantamedia)}</span>
       {stat.gol ? ` · ${stat.gol} gol` : ''}
     </span>
   )

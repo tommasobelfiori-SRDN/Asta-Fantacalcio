@@ -139,11 +139,9 @@ export function getTargetPool(availablePlayers, remainingByRole) {
   return pool
 }
 
-export function computeSuggestedBid({ player, players, draftByPlayerId, leagueConfig }) {
-  const mySquad = getMySquad(draftByPlayerId)
-  const creditsRemaining = getCreditsRemaining(leagueConfig, mySquad)
-  const filled = getSlotsFilledByRole(mySquad)
-  const remainingByRole = getSlotsRemainingByRole(leagueConfig, filled)
+// La stessa aritmetica vale per qualunque squadra, tua o avversaria: basta
+// sapere quanti crediti le restano e quali slot deve ancora riempire.
+export function computeBidForState({ player, players, draftByPlayerId, creditsRemaining, remainingByRole }) {
   const totalSlotsRemaining = getTotalSlotsRemaining(remainingByRole)
   const maxBudget = computeMaxRecommendedBudget(creditsRemaining, totalSlotsRemaining)
 
@@ -201,6 +199,13 @@ export function computeSuggestedBid({ player, players, draftByPlayerId, leagueCo
   }
 }
 
+export function computeSuggestedBid({ player, players, draftByPlayerId, leagueConfig }) {
+  const mySquad = getMySquad(draftByPlayerId)
+  const creditsRemaining = getCreditsRemaining(leagueConfig, mySquad)
+  const remainingByRole = getSlotsRemainingByRole(leagueConfig, getSlotsFilledByRole(mySquad))
+  return computeBidForState({ player, players, draftByPlayerId, creditsRemaining, remainingByRole })
+}
+
 export function getSuggestionsByRole(availablePlayers, role, limit = 5) {
   return availablePlayers
     .filter((p) => p.roleClassic === role)
@@ -233,4 +238,111 @@ export function buildSuggestions({ players, draftByPlayerId, leagueConfig, limit
   }))
 
   return { creditsRemaining, totalSlotsRemaining, maxBudget, sections }
+}
+
+// --- Avversari ---
+//
+// Ogni altra squadra della lega parte con gli stessi crediti e gli stessi slot:
+// registrando chi ha preso cosa e a quanto, la stessa aritmetica della tua rosa
+// dice quanto può ancora spendere ciascuno. È la differenza tra "ha 300 crediti"
+// e "può metterne al massimo 281 su un giocatore solo".
+
+export function getOpponents(leagueConfig) {
+  return Array.isArray(leagueConfig?.opponents) ? leagueConfig.opponents : []
+}
+
+export function getTakenEntries(draftByPlayerId) {
+  return Object.entries(draftByPlayerId || {})
+    .filter(([, entry]) => entry.status === 'taken')
+    .map(([id, entry]) => ({ id, ...entry }))
+}
+
+// Acquisti segnati "a un altro" senza dire a chi (o a una squadra poi rimossa):
+// non entrano in nessun conto, e finché restano i tetti degli altri sono
+// sovrastimati.
+export function getUnassignedTaken(draftByPlayerId, leagueConfig) {
+  const ids = new Set(getOpponents(leagueConfig).map((o) => o.id))
+  return getTakenEntries(draftByPlayerId).filter((e) => !e.ownerId || !ids.has(e.ownerId))
+}
+
+export function computeOpponentStates(leagueConfig, draftByPlayerId) {
+  const taken = getTakenEntries(draftByPlayerId)
+  return getOpponents(leagueConfig).map((opponent) => {
+    const squad = taken.filter((e) => e.ownerId === opponent.id)
+    const spent = getCreditsSpent(squad)
+    const remaining = leagueConfig.totalCredits - spent
+    const filled = getSlotsFilledByRole(squad)
+    const remainingByRole = getSlotsRemainingByRole(leagueConfig, filled)
+    const totalSlotsRemaining = getTotalSlotsRemaining(remainingByRole)
+    const maxBudget = computeMaxRecommendedBudget(remaining, totalSlotsRemaining)
+    // Acquisti registrati senza prezzo: contano negli slot ma non nei crediti,
+    // quindi il residuo di questa squadra è per eccesso.
+    const withoutPrice = squad.filter((e) => e.price == null).length
+    return {
+      ...opponent,
+      squad,
+      spent,
+      remaining,
+      filled,
+      remainingByRole,
+      totalSlotsRemaining,
+      maxBudget,
+      withoutPrice,
+    }
+  })
+}
+
+// Chi può ancora rilanciare su QUESTO calciatore: serve uno slot libero nel suo
+// ruolo e almeno un credito oltre a quelli da riservare agli altri slot.
+// maxBid è il tetto invalicabile; estimate è quanto quella squadra spenderebbe
+// seguendo lo stesso criterio dell'offerta consigliata — la cifra realistica,
+// non quella teorica.
+export function computeRivalThreat({ player, players, draftByPlayerId, leagueConfig }) {
+  const role = player.roleClassic
+  const contenders = []
+  const outOfRace = []
+  for (const state of computeOpponentStates(leagueConfig, draftByPlayerId)) {
+    if ((state.remainingByRole[role] || 0) <= 0) {
+      outOfRace.push({ ...state, why: 'ruolo-completo' })
+      continue
+    }
+    if (state.maxBudget.value <= 0) {
+      outOfRace.push({ ...state, why: 'senza-crediti' })
+      continue
+    }
+    const estimate = computeBidForState({
+      player,
+      players,
+      draftByPlayerId,
+      creditsRemaining: state.remaining,
+      remainingByRole: state.remainingByRole,
+    })
+    contenders.push({ ...state, maxBid: state.maxBudget.value, estimate: estimate.value })
+  }
+  contenders.sort((a, b) => b.maxBid - a.maxBid || (b.estimate ?? 0) - (a.estimate ?? 0))
+  return {
+    contenders,
+    outOfRace,
+    topThreat: contenders[0] || null,
+    unassigned: getUnassignedTaken(draftByPlayerId, leagueConfig),
+  }
+}
+
+// Quanto serve per essere certi di prenderlo: un credito sopra il tetto del
+// più ricco tra chi può ancora rilanciare — se il tuo tetto lo permette.
+export function computeAnticipation({ player, players, draftByPlayerId, leagueConfig }) {
+  const bid = computeSuggestedBid({ player, players, draftByPlayerId, leagueConfig })
+  const threat = computeRivalThreat({ player, players, draftByPlayerId, leagueConfig })
+  const myMax = bid.maxBudget.value
+  const rivalMax = threat.topThreat?.maxBid ?? 0
+  const needed = rivalMax + 1
+  return {
+    bid,
+    threat,
+    rivalMax,
+    needed,
+    feasible: needed <= myMax,
+    // L'offerta consigliata basta già: nessuno può arrivarci.
+    covered: bid.value != null && bid.value >= needed,
+  }
 }

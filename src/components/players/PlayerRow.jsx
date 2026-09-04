@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { useStore } from '../../store.js'
+import { useStore, useOpponentName } from '../../store.js'
 import { ROLE_BADGE_CLASSES } from '../../lib/roles.js'
 import { convenienceRatio, convenienceTier, penaltyRankBadge } from '../../lib/engine.js'
 import { formatRatio } from '../../lib/format.js'
@@ -14,6 +14,7 @@ function PlayerRow({ player }) {
   const draftEntry = useStore((s) => s.draftByPlayerId[player.id])
   const isSelected = useStore((s) => s.selectedPlayerId === player.id)
   const selectPlayer = useStore((s) => s.selectPlayer)
+  const ownerName = useOpponentName(draftEntry?.ownerId)
   const ratio = convenienceRatio(player)
   const tier = convenienceTier(player)
   const penaltyBadge = penaltyRankBadge(player)
@@ -49,7 +50,10 @@ function PlayerRow({ player }) {
             </span>
           </span>
           {isTaken ? (
-            <span className="font-sans text-[11px] font-bold uppercase tracking-caps">Preso da un avversario</span>
+            <span className="font-sans text-[11px] font-bold uppercase tracking-caps">
+              {ownerName ? `Preso da ${ownerName}` : 'Preso da un avversario'}
+              {draftEntry.price != null && ` · ${draftEntry.price} cr`}
+            </span>
           ) : (
             <ConvenienceTag tier={tier} ratioText={formatRatio(ratio)} />
           )}

@@ -19,6 +19,30 @@ function snapshotFromPlayer(player) {
   return { name: player.name, team: player.team, roleClassic: player.roleClassic }
 }
 
+// Il config salvato da versioni precedenti non ha la lista avversari: si
+// completa con i default invece di rompersi al primo accesso.
+export function normalizeLeagueConfig(config) {
+  return {
+    ...DEFAULT_LEAGUE_CONFIG,
+    ...(config || {}),
+    roles: { ...DEFAULT_LEAGUE_CONFIG.roles, ...(config?.roles || {}) },
+    opponents: Array.isArray(config?.opponents) ? config.opponents : [],
+  }
+}
+
+function findOpponent(opponents, ownerId) {
+  return ownerId ? (opponents || []).find((o) => o.id === ownerId) || null : null
+}
+
+function parsePrice(price) {
+  return price === '' || price == null ? null : Math.max(0, Number(price) || 0)
+}
+
+function takenLabel(playerName, owner, price) {
+  if (!owner) return `${playerName} — preso da un avversario`
+  return price != null ? `${playerName} — a ${owner.name} (${price} cr)` : `${playerName} — a ${owner.name}`
+}
+
 export const useStore = create(
   persist(
     (set, get) => ({
@@ -45,7 +69,7 @@ export const useStore = create(
       playerDetailsById: {},
 
       // --- config lega ---
-      setLeagueConfig: (config) => set({ leagueConfig: config }),
+      setLeagueConfig: (config) => set({ leagueConfig: normalizeLeagueConfig(config) }),
       setShowLeagueConfigModal: (v) => set({ showLeagueConfigModal: v }),
 
       // --- quotazioni ---
@@ -113,14 +137,20 @@ export const useStore = create(
         })
       },
 
-      markTaken: (player) => {
+      // Chi l'ha preso e a quanto: facoltativi per non bloccare mai la
+      // registrazione in asta, ma senza di loro i conti sugli avversari non
+      // tornano (vedi getUnassignedTaken).
+      markTaken: (player, { ownerId = null, price = null } = {}) => {
         const previousEntry = get().draftByPlayerId[player.id] || null
+        const owner = findOpponent(get().leagueConfig.opponents, ownerId)
+        const numericPrice = parsePrice(price)
         set({
           draftByPlayerId: {
             ...get().draftByPlayerId,
             [player.id]: {
               status: 'taken',
-              price: null,
+              price: numericPrice,
+              ownerId: owner ? owner.id : null,
               takenAt: new Date().toISOString(),
               ...snapshotFromPlayer(player),
             },
@@ -128,9 +158,22 @@ export const useStore = create(
           lastAction: {
             playerId: player.id,
             previousEntry,
-            label: `${player.name} — preso da un avversario`,
+            label: takenLabel(player.name, owner, numericPrice),
           },
         })
+      },
+
+      // Correzione a posteriori di un acquisto avversario (squadra o prezzo),
+      // ad esempio dalla lista dei non attribuiti.
+      updateTaken: (playerId, patch) => {
+        const entry = get().draftByPlayerId[playerId]
+        if (!entry || entry.status !== 'taken') return
+        const next = { ...entry }
+        if ('ownerId' in patch) {
+          next.ownerId = findOpponent(get().leagueConfig.opponents, patch.ownerId)?.id ?? null
+        }
+        if ('price' in patch) next.price = parsePrice(patch.price)
+        set({ draftByPlayerId: { ...get().draftByPlayerId, [playerId]: next } })
       },
 
       freePlayer: (playerId, playerName) => {
@@ -177,7 +220,7 @@ export const useStore = create(
       importState: (data) => {
         if (!data || typeof data !== 'object') throw new Error('file non valido')
         set({
-          leagueConfig: data.leagueConfig || DEFAULT_LEAGUE_CONFIG,
+          leagueConfig: normalizeLeagueConfig(data.leagueConfig),
           players: Array.isArray(data.players) ? data.players : [],
           playersUpdatedAt: data.playersUpdatedAt || null,
           draftByPlayerId: data.draftByPlayerId || {},
@@ -187,6 +230,13 @@ export const useStore = create(
     {
       name: STORAGE_KEY,
       version: STORAGE_VERSION,
+      // Lo stato salvato prima dell'arrivo degli avversari non ha la loro
+      // lista: si normalizza al caricamento.
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted || {}),
+        leagueConfig: normalizeLeagueConfig(persisted?.leagueConfig),
+      }),
       partialize: (state) => ({
         leagueConfig: state.leagueConfig,
         players: state.players,
@@ -197,3 +247,9 @@ export const useStore = create(
     }
   )
 )
+
+// Nome della squadra avversaria che ha preso un calciatore (null se non
+// attribuito): selettore puntuale, così le righe del listone non si
+// ri-renderizzano per ogni cambiamento dello store.
+export const useOpponentName = (ownerId) =>
+  useStore((s) => (ownerId ? (s.leagueConfig.opponents.find((o) => o.id === ownerId)?.name ?? null) : null))
