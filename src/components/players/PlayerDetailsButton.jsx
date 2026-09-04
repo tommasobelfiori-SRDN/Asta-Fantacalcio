@@ -54,9 +54,15 @@ function StatusRow({ label, value }) {
   )
 }
 
-function parseDays(giorni) {
-  const n = Number(String(giorni || '').match(/\d+/)?.[0])
-  return Number.isFinite(n) ? n : null
+// Sopra il mese l'infortunio pesa su un'asta: si evidenzia.
+const LONG_INJURY_DAYS = 30
+
+// Perché la cronaca può mancare. "non-in-mappa" vuol dire che questo calciatore
+// non è nella mappa id costruita dal Mac (nome troppo diverso su Transfermarkt,
+// oppure entrato nel listone dopo l'ultima generazione): il link manuale resta.
+const TM_MISSING_NOTE = {
+  'non-in-mappa': 'Questo calciatore non è collegato alla scheda Transfermarkt.',
+  'api-non-raggiungibile': 'Transfermarkt non risponde in questo momento.',
 }
 
 export default function PlayerDetailsButton({ player }) {
@@ -181,7 +187,7 @@ export default function PlayerDetailsButton({ player }) {
                   {tm?.found && tm.injuries.length > 0 && (
                     <ul>
                       {tm.injuries.map((inj, i) => {
-                        const days = parseDays(inj.giorni)
+                        const days = inj.giorniNumero
                         return (
                           <li
                             key={i}
@@ -190,10 +196,12 @@ export default function PlayerDetailsButton({ player }) {
                             <span className="truncate font-serif text-[15px] font-medium">{inj.tipo}</span>
                             <span className="font-mono text-[11px] text-muted">
                               {inj.da} → {inj.a}
+                              {inj.partitePerse > 0 &&
+                                ` · ${inj.partitePerse} partit${inj.partitePerse === 1 ? 'a' : 'e'}`}
                             </span>
                             <span
                               className={`w-14 text-right font-mono text-xs ${
-                                days != null && days >= 30 ? 'font-semibold text-granata' : ''
+                                days >= LONG_INJURY_DAYS ? 'font-semibold text-granata' : ''
                               }`}
                             >
                               {inj.giorni}
@@ -209,8 +217,16 @@ export default function PlayerDetailsButton({ player }) {
                     </p>
                   )}
                   {tm && !tm.found && (
-                    <p className="py-2.5 font-serif text-[13px] italic text-muted">
-                      Calciatore non trovato con certezza su Transfermarkt (nome o squadra non corrispondenti).
+                    <p className="py-2.5 font-serif text-[13px] italic leading-relaxed text-muted">
+                      {TM_MISSING_NOTE[tm.reason] || 'Cronaca infortuni non disponibile.'}{' '}
+                      <a
+                        href={`https://www.transfermarkt.it/schnellsuche/ergebnis/schnellsuche?query=${encodeURIComponent(player.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-sans text-[11px] font-bold uppercase not-italic tracking-caps text-campo hover:text-ink"
+                      >
+                        Cerca ↗
+                      </a>
                     </p>
                   )}
                 </div>

@@ -53,6 +53,14 @@ I dati (ruoli, quotazioni, FVM) vengono letti dalla pagina pubblica `fantacalcio
 
 I calciatori **ceduti fuori dalla Serie A** restano nella pagina delle quotazioni finché il sito non la ripubblica, anche giorni dopo la chiusura del mercato. Per questo la function legge anche le venti pagine delle rose (`/serie-a/squadre/<squadra>`), aggiornate col mercato e con gli stessi id numerici del listone: chi non compare più in nessuna rosa arriva al client con `ceduto: true` ed è escluso da lista, suggerimenti e conti. Se una pagina rosa non si legge o ha meno di 15 calciatori, i suoi giocatori non vengono giudicati.
 
+La **cronaca infortuni** viene da Transfermarkt, che però rifiuta le richieste dagli IP dei datacenter: il sito pubblico risponde alla Cloud Function con una pagina di protezione vuota. Risponde invece a tutti l'API che alimenta quelle pagine, `tmapi.transfermarkt.technology`, che serve gli stessi dati già in JSON. Resta fuori portata solo la ricerca per nome, che vive sul sito pubblico: si fa una volta dal Mac con
+
+```bash
+node scripts/fetch-tm-ids.mjs
+```
+
+che scrive `functions/data/transfermarkt-ids.json` (id fantacalcio.it → id Transfermarkt, accettando un risultato solo se la squadra coincide). Gli id non cambiano mai: si rigenera solo quando entrano volti nuovi nel listone, e lo script riprende da dove si era fermato.
+
 ## Licenza
 
 MIT — vedi [LICENSE](LICENSE).

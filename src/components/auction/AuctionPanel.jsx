@@ -11,6 +11,14 @@ import RivalsBlock from './RivalsBlock.jsx'
 // un nome e servono subito prezzo consigliato, rendimento e infortuni, senza
 // aprire e chiudere finestre. Resta fisso a destra sugli schermi larghi.
 
+// Perché la cronaca può mancare. "non-in-mappa" vuol dire che questo calciatore
+// non è nella mappa id costruita dal Mac (nome troppo diverso su Transfermarkt,
+// oppure entrato nel listone dopo l'ultima generazione): il link manuale resta.
+const TM_MISSING_NOTE = {
+  'non-in-mappa': 'Questo calciatore non è collegato alla scheda Transfermarkt.',
+  'api-non-raggiungibile': 'Transfermarkt non risponde in questo momento.',
+}
+
 const BID_NOTE = {
   'ruolo-completo': 'Hai già riempito tutti gli slot di questo ruolo.',
   'rosa-completa': 'Rosa completa: non ti servono altri calciatori.',
@@ -201,7 +209,7 @@ export default function AuctionPanel() {
         {detail?.status === 'ready' && tm?.found && tm.injuries.length > 0 && (
           <ul>
             {tm.injuries.slice(0, 4).map((inj, i) => {
-              const days = Number(String(inj.giorni).match(/\d+/)?.[0])
+              const days = inj.giorniNumero
               return (
                 <li
                   key={i}
@@ -221,13 +229,9 @@ export default function AuctionPanel() {
         {detail?.status === 'ready' && tm?.found && tm.injuries.length === 0 && (
           <p className="py-2 font-serif text-[13px] italic text-muted">Nessun infortunio registrato.</p>
         )}
-        {/* rowsSeen a 0 vuol dire che la ricerca non ha risposto affatto (Transfermarkt
-            rifiuta le richieste dai server): diverso dal non aver trovato il calciatore. */}
         {detail?.status === 'ready' && tm && !tm.found && (
           <p className="py-2 font-serif text-[13px] italic leading-relaxed text-muted">
-            {tm.rowsSeen === 0
-              ? 'Transfermarkt non risponde alle richieste del server.'
-              : 'Calciatore non trovato con certezza (nome o squadra non corrispondenti).'}{' '}
+            {TM_MISSING_NOTE[tm.reason] || 'Cronaca infortuni non disponibile.'}{' '}
             <a
               href={`https://www.transfermarkt.it/schnellsuche/ergebnis/schnellsuche?query=${encodeURIComponent(player.name)}`}
               target="_blank"

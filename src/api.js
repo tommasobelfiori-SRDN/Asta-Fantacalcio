@@ -19,6 +19,7 @@ export function fetchQuotazioni() {
 
 export function fetchPlayerDetails(player) {
   const params = new URLSearchParams({
+    id: player.id,
     url: player.profileUrl,
     name: player.name,
     team: player.team,

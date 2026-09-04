@@ -665,14 +665,289 @@ function parsePlayerDetails(html) {
 }
 
 // --- Cronaca infortuni da Transfermarkt ---
+//
+// Il sito pubblico www.transfermarkt.it rifiuta le richieste dagli IP dei
+// datacenter: dal Mac risponde, dalla Cloud Function torna una pagina di
+// protezione vuota (202, zero righe — verificato). L'API che alimenta le sue
+// pagine, `tmapi.transfermarkt.technology`, risponde invece a tutti e serve gli
+// stessi dati già in JSON, senza scraping.
+//
+// Resta il problema di collegare i due siti, che hanno id diversi: la RICERCA
+// vive solo sul sito pubblico, quindi è bloccata qui. La si fa una volta sola
+// dal Mac (`scripts/fetch-tm-ids.mjs`, accetta un risultato solo se la squadra
+// coincide) e il risultato viaggia come file statico accanto alla function: gli
+// id di Transfermarkt non cambiano mai, la mappa si rigenera solo quando entrano
+// volti nuovi nel listone.
+const TM_API = 'https://tmapi.transfermarkt.technology'
 
-const TM_SEARCH_URL = 'https://www.transfermarkt.it/schnellsuche/ergebnis/schnellsuche'
+let tmIdsCache
+function tmIdEntry(playerId) {
+  if (tmIdsCache === undefined) {
+    try {
+      tmIdsCache = require('./data/transfermarkt-ids.json').byId || {}
+    } catch {
+      console.warn('Mappa id Transfermarkt assente: cronaca infortuni non disponibile.')
+      tmIdsCache = {}
+    }
+  }
+  return tmIdsCache[playerId] || null
+}
 
-// Parola chiave distintiva per ciascuna squadra, usata per riconoscere la stessa
-// squadra scritta in modi diversi: Transfermarkt usa il nome ufficiale per esteso
-// ("ACF Fiorentina", "AS Roma", "AC Milan"), le pagine fantacalcio.it il nome
-// breve ("Fiorentina"), il listone la sigla ("FIO"). Si verifica che il nome
-// contenga la parola chiave, non l'uguaglianza.
+// L'API risponde in inglese; qui si legge in italiano. Le voci non tradotte
+// passano invariate: meglio "Tendon irritation" che nasconderla.
+const INJURY_IT = {
+  'abdominal muscle strain': 'Stiramento addominale',
+  'abdominal problems': 'Problemi addominali',
+  'achilles tendon irritation': 'Infiammazione del tendine d\'Achille',
+  'achilles tendon problems': 'Problemi al tendine d\'Achille',
+  'achilles tendon rupture': 'Rottura del tendine d\'Achille',
+  'achilles tendon surgery': 'Operazione al tendine d\'Achille',
+  'acromioclavicular joint dislocation': 'Lussazione acromion-claveare',
+  'adductor injury': 'Infortunio agli adduttori',
+  'adductor pain': 'Dolore agli adduttori',
+  'adductor tear': 'Lesione agli adduttori',
+  'allergic reaction': 'Reazione allergica',
+  angina: 'Angina',
+  'ankle injury': 'Infortunio alla caviglia',
+  'ankle ligament tear': 'Lesione dei legamenti della caviglia',
+  'ankle problems': 'Problemi alla caviglia',
+  'ankle sprain': 'Distorsione alla caviglia',
+  'ankle surgery': 'Operazione alla caviglia',
+  appendectomy: 'Appendicectomia',
+  'arch problems': 'Problemi alla pianta del piede',
+  'arm injury': 'Infortunio al braccio',
+  arthroscopy: 'Artroscopia',
+  'back injury': 'Infortunio alla schiena',
+  'back problems': 'Problemi alla schiena',
+  'blockage in the back': 'Blocco alla schiena',
+  'bone bruise': 'Contusione ossea',
+  'bone edema': 'Edema osseo',
+  'broken ankle': 'Frattura alla caviglia',
+  'broken arm': 'Frattura al braccio',
+  'broken cheekbone': 'Frattura dello zigomo',
+  'broken collarbone': 'Frattura della clavicola',
+  'broken fibula': 'Frattura del perone',
+  'broken finger': 'Frattura di un dito',
+  'broken foot': 'Frattura al piede',
+  'broken hand': 'Frattura alla mano',
+  'broken jaw': 'Frattura della mandibola',
+  'broken kneecap': 'Frattura della rotula',
+  'broken leg': 'Frattura alla gamba',
+  'broken nose bone': 'Frattura del naso',
+  'broken thumb': 'Frattura del pollice',
+  'broken tibia': 'Frattura della tibia',
+  'broken toe': 'Frattura di un dito del piede',
+  bronchitis: 'Bronchite',
+  bruise: 'Contusione',
+  'bruise on ankle': 'Contusione alla caviglia',
+  'bruise on the ankle joint': 'Contusione alla caviglia',
+  'bruised back': 'Contusione alla schiena',
+  'bruised knee': 'Contusione al ginocchio',
+  'bruised ribs': 'Contusione alle costole',
+  bursitis: 'Borsite',
+  'calf injury': 'Infortunio al polpaccio',
+  'calf muscle tear': 'Lesione al polpaccio',
+  'calf problems': 'Problemi al polpaccio',
+  'calf strain': 'Stiramento al polpaccio',
+  'capsular injury': 'Lesione capsulare',
+  'cervical spine injury': 'Trauma cervicale',
+  'cervical vertebra fracture': 'Frattura di una vertebra cervicale',
+  'chest injury': 'Trauma al torace',
+  cold: 'Raffreddore',
+  'collateral ligament injury': 'Lesione del collaterale',
+  concussion: 'Commozione cerebrale',
+  contracture: 'Contrattura',
+  'corona virus': 'Covid',
+  'crack bruise': 'Contusione ossea',
+  'cruciate ligament injury': 'Lesione del crociato',
+  'cruciate ligament surgery': 'Operazione al crociato',
+  'cruciate ligament tear': 'Rottura del crociato',
+  'dead leg': 'Contusione alla coscia',
+  'dental surgery': 'Intervento dentale',
+  depression: 'Depressione',
+  'elbow injury': 'Infortunio al gomito',
+  'eye injury': 'Infortunio all\'occhio',
+  'eyebow fracture': 'Frattura dell\'arcata sopraccigliare',
+  'facial fracture': 'Frattura al volto',
+  'facial injury': 'Trauma al volto',
+  'fatigue fracture': 'Frattura da stress',
+  'femoral neck fracture': 'Frattura del collo del femore',
+  fever: 'Febbre',
+  'finger injury': 'Infortunio a un dito',
+  fitness: 'Condizione fisica',
+  flu: 'Influenza',
+  'foot bruise': 'Contusione al piede',
+  'foot injury': 'Infortunio al piede',
+  'foot surgery': 'Operazione al piede',
+  fracture: 'Frattura',
+  'groin injury': 'Infortunio all\'inguine',
+  'groin problems': 'Problemi all\'inguine',
+  'groin strain': 'Stiramento inguinale',
+  'groin surgery': 'Operazione all\'inguine',
+  'hamstring injury': 'Infortunio al bicipite femorale',
+  'hamstring muscle injury': 'Lesione al bicipite femorale',
+  'hamstring strain': 'Stiramento al bicipite femorale',
+  'hand injury': 'Infortunio alla mano',
+  'head injury': 'Trauma cranico',
+  'heart problems': 'Problemi cardiaci',
+  'heel problems': 'Problemi al tallone',
+  'heel spur': 'Spina calcaneare',
+  'hip bruise': 'Contusione all\'anca',
+  'hip flexor problems': 'Problemi al flessore dell\'anca',
+  'hip injury': 'Infortunio all\'anca',
+  'hip problems': 'Problemi all\'anca',
+  ill: 'Malattia',
+  infection: 'Infezione',
+  inflammation: 'Infiammazione',
+  'inflammation in the head of the fibula': 'Infiammazione del perone',
+  'inflammation in the knee': 'Infiammazione al ginocchio',
+  'inflammation in the spine': 'Infiammazione alla colonna',
+  'inflammation of ligaments in the knee': 'Infiammazione dei legamenti del ginocchio',
+  'inflammation of pubic bone': 'Infiammazione del pube',
+  'inflammation of the biceps tendon in the thigh': 'Infiammazione del tendine del bicipite femorale',
+  influenza: 'Influenza',
+  'inguinal hernia': 'Ernia inguinale',
+  'injury to abdominal muscles': 'Infortunio agli addominali',
+  'injury to the ankle': 'Infortunio alla caviglia',
+  'inner knee ligament tear': 'Lesione del collaterale interno',
+  'inner ligament injury': 'Lesione del legamento interno',
+  'inner ligament stretch of the knee': 'Distrazione del legamento interno',
+  'internal ligament strain': 'Distrazione del legamento interno',
+  'intestinal surgery': 'Operazione intestinale',
+  'intestinal virus': 'Virus intestinale',
+  'knee bruise': 'Contusione al ginocchio',
+  'knee collateral ligament strain': 'Distrazione del collaterale',
+  'knee injury': 'Infortunio al ginocchio',
+  'knee medial ligament tear': 'Lesione del collaterale mediale',
+  'knee problems': 'Problemi al ginocchio',
+  'knee surgery': 'Operazione al ginocchio',
+  knock: 'Colpo subito',
+  'leg injury': 'Infortunio alla gamba',
+  'ligament injury': 'Lesione legamentosa',
+  'ligament stretching': 'Distrazione legamentosa',
+  lumbago: 'Lombalgia',
+  'lumbar vertebra fracture': 'Frattura di una vertebra lombare',
+  'lumbar vertebra problems': 'Problemi alle vertebre lombari',
+  malaria: 'Malaria',
+  'meniscus injury': 'Lesione al menisco',
+  'meniscus tear': 'Rottura del menisco',
+  'metacarpal fracture': 'Frattura metacarpale',
+  'metatarsal bruise': 'Contusione al metatarso',
+  'metatarsal fracture': 'Frattura del metatarso',
+  'minor knock': 'Colpo lieve',
+  mononucleation: 'Mononucleosi',
+  'muscle contusion': 'Contusione muscolare',
+  'muscle fatigue': 'Affaticamento muscolare',
+  'muscle injury': 'Infortunio muscolare',
+  'muscle stiffness': 'Rigidità muscolare',
+  'muscle strain': 'Stiramento muscolare',
+  'muscle tear': 'Lesione muscolare',
+  'muscular problems': 'Problemi muscolari',
+  'nose injury': 'Trauma al naso',
+  'nose surgery': 'Operazione al naso',
+  'outer ligament problems': 'Problemi al legamento esterno',
+  'outer ligament tear': 'Lesione del legamento esterno',
+  overstretching: 'Allungamento eccessivo',
+  'overstretching of the syndesmotic ligament': 'Distrazione della sindesmosi',
+  'partial damage to the cruciate ligament': 'Lesione parziale del crociato',
+  'partial muscle tear': 'Lesione muscolare parziale',
+  'partial patellar tendon tear': 'Lesione parziale del tendine rotuleo',
+  'partial tear of the plantar fascia': 'Lesione parziale della fascia plantare',
+  'patellar tendinopathy syndrome': 'Tendinopatia rotulea',
+  'patellar tendon dislocation': 'Lussazione del tendine rotuleo',
+  'patellar tendon irritation': 'Infiammazione del tendine rotuleo',
+  'patellar tendon problems': 'Problemi al tendine rotuleo',
+  'patellar tendon rupture': 'Rottura del tendine rotuleo',
+  pneumonia: 'Polmonite',
+  pneumothorax: 'Pneumotorace',
+  pubalgia: 'Pubalgia',
+  'pubic bone irritation': 'Infiammazione del pube',
+  quarantine: 'Quarantena',
+  rest: 'Riposo precauzionale',
+  'rib fracture': 'Frattura costale',
+  'right hip flexor problems': 'Problemi al flessore dell\'anca destra',
+  'scaphoid fracture': 'Frattura dello scafoide',
+  'scaphoid surgery': 'Operazione allo scafoide',
+  'sciatica problems': 'Sciatalgia',
+  'shin bruise': 'Contusione alla tibia',
+  'shin injury': 'Infortunio alla tibia',
+  'shoulder injury': 'Infortunio alla spalla',
+  'sore muscles': 'Indolenzimento muscolare',
+  sprain: 'Distorsione',
+  'stomach flu': 'Influenza intestinale',
+  'stomach problems': 'Problemi allo stomaco',
+  strain: 'Stiramento',
+  'strain in the thigh and gluteal muscles': 'Stiramento a coscia e glutei',
+  'stress reaction of the bone': 'Reazione da stress ossea',
+  surgery: 'Operazione',
+  'syndesmosis ligament tear': 'Lesione della sindesmosi',
+  'syndesmotic ligament tear': 'Lesione della sindesmosi',
+  'tear of the lateral meniscus': 'Rottura del menisco laterale',
+  'tendon irritation': 'Infiammazione tendinea',
+  'tendon rupture': 'Rottura del tendine',
+  'tendon tear': 'Lesione tendinea',
+  tendonitis: 'Tendinite',
+  'thigh problems': 'Problemi alla coscia',
+  'thumb injury': 'Infortunio al pollice',
+  'tibia and fibula fracture': 'Frattura di tibia e perone',
+  'toe injury': 'Infortunio all\'alluce',
+  tonsillitis: 'Tonsillite',
+  toothache: 'Mal di denti',
+  'torn ankle ligaments': 'Lesione dei legamenti della caviglia',
+  'torn lateral ankle ligament': 'Lesione del legamento laterale della caviglia',
+  'torn lateral knee ligament': 'Lesione del legamento laterale',
+  'torn ligaments': 'Lesione dei legamenti',
+  'torn ligaments in the tarsus': 'Lesione dei legamenti del tarso',
+  'torn muscle bundle': 'Lesione del fascio muscolare',
+  'torn muscle fiber': 'Lesione delle fibre muscolari',
+  'torn muscle fiber in the adductor area': 'Lesione delle fibre degli adduttori',
+  'torn thigh muscle': 'Lesione alla coscia',
+  'traffic accident': 'Incidente stradale',
+  'unknown injury': 'Infortunio non specificato',
+  'vein occlusion': 'Occlusione venosa',
+  virus: 'Virus',
+  'wrist fracture': 'Frattura del polso',
+  'wrist injury': 'Infortunio al polso',
+}
+
+function translateInjury(name) {
+  const raw = String(name || '').trim()
+  return INJURY_IT[raw.toLowerCase()] || raw || 'Infortunio'
+}
+
+// L'app mostra "giorni" come testo: qui si costruisce in italiano invece di
+// usare daysDisplay, che è inglese ("24 Days").
+function formatInjuryDays(details) {
+  const days = Number(details?.days)
+  if (!Number.isFinite(days) || days <= 0) return '—'
+  return `${days} giorn${days === 1 ? 'o' : 'i'}`
+}
+
+function formatInjuryDate(iso) {
+  const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : ''
+}
+
+// L'API dà l'anno di inizio stagione (2025 = 2025/26).
+function formatInjurySeason(seasonId) {
+  const year = Number(seasonId)
+  return Number.isFinite(year) ? `${year}/${String(year + 1).slice(2)}` : ''
+}
+
+async function fetchTmJson(path) {
+  const res = await fetch(`${TM_API}${path}`, {
+    headers: { Accept: 'application/json', Referer: 'https://www.transfermarkt.it/' },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  })
+  if (!res.ok) throw new UpstreamError(`tmapi ${path} ha risposto con status ${res.status}`)
+  const body = await res.json()
+  if (!body?.success) throw new UpstreamError(`tmapi ${path}: risposta senza successo`)
+  return body.data
+}
+
+// Nome esteso di ciascuna squadra a partire dalla sigla del listone: la pagina
+// degli indisponibili scrive "Fiorentina", il listone "FIO". Serve anche allo
+// script sul Mac che costruisce la mappa Transfermarkt.
 const TEAM_KEYWORDS = {
   ATA: 'Atalanta',
   BOL: 'Bologna',
@@ -696,78 +971,35 @@ const TEAM_KEYWORDS = {
   VEN: 'Venezia',
 }
 
-// fantacalcio.it disambigua gli omonimi con un'iniziale finale (es. "Martinez L."):
-// Transfermarkt non conosce questa convenzione, quindi la si toglie per la ricerca.
-function cleanSearchName(name) {
-  return String(name || '')
-    .replace(/\s+[A-Z]\.$/, '')
-    .trim()
-}
-
-function extractTmPlayerId(href) {
-  const match = String(href || '').match(/\/spieler\/(\d+)/)
-  return match ? match[1] : null
-}
-
-async function findTransfermarktPlayer(name, teamCode) {
-  const teamKeyword = TEAM_KEYWORDS[teamCode]
-  if (!teamKeyword) return null
-
-  const query = cleanSearchName(name)
-  if (!query) return null
-
-  const html = await fetchHtml(`${TM_SEARCH_URL}?query=${encodeURIComponent(query)}`)
-  const $ = cheerio.load(html)
-  const rows = $('table.items').first().find('> tbody > tr').toArray()
-
-  for (const el of rows) {
-    const $row = $(el)
-    const playerLink = $row.find('a[href*="/profil/spieler/"]').first()
-    const teamLink = $row.find('a[href*="/startseite/verein/"]').first()
-    const tmId = extractTmPlayerId(playerLink.attr('href'))
-    const teamName = teamLink.attr('title') || teamLink.text().trim()
-    if (tmId && teamName.toLowerCase().includes(teamKeyword.toLowerCase())) {
-      return { tmId, tmName: playerLink.attr('title') || playerLink.text().trim() }
-    }
+// Non bloccante per design: se l'id non è in mappa o l'API non risponde, si
+// torna { found: false } con il motivo — i dati fantacalcio.it restano comunque
+// disponibili e il frontend spiega cosa manca invece di mentire.
+async function fetchTransfermarktInjuries(playerId, name, teamCode) {
+  const entry = tmIdEntry(playerId)
+  if (!entry) {
+    return { found: false, reason: 'non-in-mappa' }
   }
-  // Nessuna riga con la squadra giusta: meglio niente che un omonimo sbagliato.
-  // Il conteggio righe distingue "cercato e non trovato" da "pagina vuota o
-  // diversa da quella attesa", che vuol dire che la ricerca non ha risposto.
-  return { notFound: true, rowsSeen: rows.length, query }
-}
-
-// L'URL di Transfermarkt ignora lo slug testuale e usa solo l'id numerico finale
-// (verificato: /x/verletzungen/spieler/364135 funziona) — evita di dover
-// ricostruire lo slug esatto del nome.
-function parseInjuryHistory(html) {
-  const $ = cheerio.load(html)
-  const rows = $('table.items').first().find('> tbody > tr').toArray()
-  const injuries = []
-  for (const el of rows) {
-    const cells = $(el).find('> td')
-    if (cells.length < 5) continue
-    injuries.push({
-      stagione: $(cells[0]).text().trim(),
-      tipo: $(cells[1]).text().trim(),
-      da: $(cells[2]).text().trim(),
-      a: $(cells[3]).text().trim(),
-      giorni: $(cells[4]).text().trim(),
-    })
+  try {
+    const data = await fetchTmJson(`/player/${entry.tmId}/injury`)
+    const injuries = (data?.injuries || [])
+      .slice()
+      // L'API li dà già dal più recente, ma non è garantito.
+      .sort((a, b) => String(b.start || '').localeCompare(String(a.start || '')))
+      .slice(0, 15)
+      .map((inj) => ({
+        stagione: formatInjurySeason(inj.seasonId),
+        tipo: translateInjury(inj.name),
+        da: formatInjuryDate(inj.start),
+        a: formatInjuryDate(inj.end),
+        giorni: formatInjuryDays(inj.durationDetails),
+        giorniNumero: Number(inj.durationDetails?.days) || null,
+        partitePerse: Number.isFinite(Number(inj.missedGamesCount)) ? Number(inj.missedGamesCount) : null,
+      }))
+    return { found: true, tmId: entry.tmId, tmName: entry.tmName, injuries }
+  } catch (err) {
+    console.error(`Transfermarkt API per ${name} (${teamCode}):`, err.message)
+    return { found: false, reason: 'api-non-raggiungibile' }
   }
-  return injuries.slice(0, 15) // storico recente, non serve l'intera carriera
-}
-
-// Non bloccante per design: se Transfermarkt non risponde, cambia struttura, o
-// il giocatore non si trova con certezza, si torna { found: false } — i dati
-// fantacalcio.it restano comunque disponibili.
-async function fetchTransfermarktInjuries(name, teamCode) {
-  const match = await findTransfermarktPlayer(name, teamCode)
-  if (!match || match.notFound) {
-    console.log('Transfermarkt: nessun match', JSON.stringify({ name, teamCode, ...(match || {}) }))
-    return { found: false, rowsSeen: match?.rowsSeen ?? null }
-  }
-  const html = await fetchHtml(`https://www.transfermarkt.it/x/verletzungen/spieler/${match.tmId}`)
-  return { found: true, tmId: match.tmId, tmName: match.tmName, injuries: parseInjuryHistory(html) }
 }
 
 async function dettagliGiocatoreHandler(req, res) {
@@ -778,6 +1010,9 @@ async function dettagliGiocatoreHandler(req, res) {
   const url = req.query.url
   const name = req.query.name
   const team = req.query.team
+  // L'id fantacalcio è la chiave della mappa verso Transfermarkt; se manca
+  // (client vecchio) si ricava dall'URL del profilo, che lo contiene in fondo.
+  const playerId = typeof req.query.id === 'string' ? req.query.id : extractPlayerId(url)
   if (typeof url !== 'string' || !isValidProfileUrl(url)) {
     res.status(400).json({ error: 'URL calciatore non valido.' })
     return
@@ -785,12 +1020,12 @@ async function dettagliGiocatoreHandler(req, res) {
   try {
     const [html, transfermarkt] = await Promise.all([
       fetchHtml(url),
-      typeof name === 'string' && typeof team === 'string'
-        ? fetchTransfermarktInjuries(name, team).catch((err) => {
+      playerId
+        ? fetchTransfermarktInjuries(playerId, name, team).catch((err) => {
             console.error('Errore recupero infortuni Transfermarkt (non bloccante):', err)
-            return { found: false }
+            return { found: false, reason: 'api-non-raggiungibile' }
           })
-        : Promise.resolve({ found: false }),
+        : Promise.resolve({ found: false, reason: 'non-in-mappa' }),
     ])
     res.status(200).json({ ...parsePlayerDetails(html), transfermarkt })
   } catch (err) {
