@@ -61,6 +61,14 @@ node scripts/fetch-tm-ids.mjs
 
 che scrive `functions/data/transfermarkt-ids.json` (id fantacalcio.it → id Transfermarkt, accettando un risultato solo se la squadra coincide). Gli id non cambiano mai: si rigenera solo quando entrano volti nuovi nel listone, e lo script riprende da dove si era fermato.
 
+Chi la scorsa stagione **non giocava in Serie A** (circa 190 fra arrivi dall'estero, Serie B e vivai) nel listone ufficiale non ha statistiche: per loro il riepilogo arriva sempre da Transfermarkt, con
+
+```bash
+node scripts/fetch-abroad-stats.mjs
+```
+
+che salva `functions/data/prev-season-abroad.json` (club, campionato, presenze, minuti, gol, assist, cartellini, coppe con lo stesso club, ed eventuale seconda squadra di gennaio). Conta solo il calcio di club: le partite in nazionale, giovanili comprese, restano fuori. Una stagione conclusa non cambia più, quindi anche questo si rigenera col mercato di gennaio.
+
 ## Licenza
 
 MIT — vedi [LICENSE](LICENSE).

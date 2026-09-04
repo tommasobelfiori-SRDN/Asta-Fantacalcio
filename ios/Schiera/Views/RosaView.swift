@@ -81,6 +81,18 @@ struct RosaView: View {
                         Text(String(format: "%.2f", fm).replacingOccurrences(of: ".", with: ","))
                             .font(.numero(14))
                             .foregroundStyle(fm >= 7 ? Palette.campo : (fm < 6 ? Palette.granata : Palette.inchiostro))
+                    } else if let abroad = player.prevSeasonAbroad {
+                        // Senza fantamedia il numero che dice qualcosa è quanto
+                        // ha giocato, e dove.
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text("\(abroad.presenze ?? 0) pres")
+                                .font(.numero(13))
+                                .foregroundStyle(Palette.inchiostro)
+                            Text(abroad.coppa == true ? "solo coppa" : (abroad.competition ?? ""))
+                                .font(.numero(10, weight: .regular))
+                                .foregroundStyle(abroad.primaDivisione == true ? Palette.azzurro : Palette.attenuato)
+                                .lineLimit(1)
+                        }
                     }
                 }
                 .padding(.vertical, 9)

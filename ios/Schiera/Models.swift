@@ -11,6 +11,9 @@ struct Player: Codable, Identifiable, Hashable {
     let fvmClassic: Int?
     let penaltyRank: Int?
     let prevSeason: PrevSeason?
+    // Chi l'anno scorso non giocava in Serie A non ha fantamedia: al suo posto
+    // il backend manda dove giocava e quanto.
+    let prevSeasonAbroad: PrevSeasonAbroad?
     let status: PlayerStatus?
     // true se il backend non lo trova più in nessuna rosa di Serie A.
     let ceduto: Bool?
@@ -29,6 +32,19 @@ struct PrevSeason: Codable, Hashable {
     let rigoriParati: Int?
     let ammonizioni: Int?
     let espulsioni: Int?
+}
+
+struct PrevSeasonAbroad: Codable, Hashable {
+    let season: String?
+    let club: String?
+    let competition: String?
+    let presenze: Int?
+    let gol: Int?
+    let assist: Int?
+    let minuti: Int?
+    let primaDivisione: Bool?
+    // true quando sono solo presenze in coppa: non è una stagione giocata.
+    let coppa: Bool?
 }
 
 struct PlayerStatus: Codable, Hashable {

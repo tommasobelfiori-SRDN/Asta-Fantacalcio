@@ -46,7 +46,11 @@ function PlayerRow({ player }) {
           <span>
             {player.team} · {player.quotazioneClassicAttuale} cr · FVM {player.fvmClassic}
             <span className="lg:hidden">
-              <PrevSeasonInline stat={player.prevSeason} />
+              <PrevSeasonInline
+                stat={player.prevSeason}
+                abroad={player.prevSeasonAbroad}
+                role={player.roleClassic}
+              />
             </span>
           </span>
           {isTaken ? (
@@ -59,7 +63,12 @@ function PlayerRow({ player }) {
           )}
         </div>
       </div>
-      <PrevSeasonStat stat={player.prevSeason} season={player.prevSeason?.season} />
+      <PrevSeasonStat
+        stat={player.prevSeason}
+        abroad={player.prevSeasonAbroad}
+        season={player.prevSeason?.season}
+        role={player.roleClassic}
+      />
       {/* Il click sulle azioni non deve cambiare anche la selezione del pannello. */}
       <div className="flex shrink-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
         {/* Su schermi larghi i dettagli stanno nel pannello: la finestra serve solo sotto. */}

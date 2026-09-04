@@ -566,8 +566,9 @@ async function quotazioniHandler(req, res) {
     for (const player of players) {
       player.penaltyRank = penaltyRankById.get(player.id) ?? null
       // Assente per chi non ha giocato in Serie A quella stagione (neopromossi,
-      // arrivi dall'estero, giovani): il frontend lo mostra come "esordiente".
+      // arrivi dall'estero, giovani): per loro si guarda dove giocavano davvero.
       player.prevSeason = statsById.get(player.id) ?? null
+      player.prevSeasonAbroad = player.prevSeason ? null : prevSeasonAbroad(player.id)
       const teamName = teamNameByCode[player.team]
       player.status = teamName ? (statusByKey.get(statusKey(teamName, player.name)) ?? null) : null
     }
@@ -679,6 +680,24 @@ function parsePlayerDetails(html) {
 // id di Transfermarkt non cambiano mai, la mappa si rigenera solo quando entrano
 // volti nuovi nel listone.
 const TM_API = 'https://tmapi.transfermarkt.technology'
+
+// Riepilogo dell'ultima stagione per chi non l'ha giocata in Serie A, calcolato
+// una volta dal Mac (`scripts/fetch-abroad-stats.mjs`) e servito come file
+// statico: una stagione conclusa non cambia più, e ricavarla al volo vorrebbe
+// dire quasi duecento richieste a Transfermarkt a ogni "Aggiorna quotazioni".
+let abroadCache
+function prevSeasonAbroad(playerId) {
+  if (abroadCache === undefined) {
+    try {
+      abroadCache = require('./data/prev-season-abroad.json')
+    } catch {
+      console.warn('Riepilogo stagione fuori Serie A assente.')
+      abroadCache = { season: null, byId: {} }
+    }
+  }
+  const entry = abroadCache.byId?.[playerId]
+  return entry ? { ...entry, season: abroadCache.season } : null
+}
 
 let tmIdsCache
 function tmIdEntry(playerId) {

@@ -28,6 +28,21 @@ function prevSeasonEntries(stat, role) {
   return [...base, ...specific, ...rigori, ...cartellini].filter(([, v]) => v != null && v !== '—')
 }
 
+// Fuori dalla Serie A non esiste la fantamedia: al suo posto il numero che
+// conta è quanto ha giocato, e il campionato dice quanto vale quel minutaggio.
+function abroadEntries(stat, role) {
+  const base = [['Presenze', stat.presenze], ['Da titolare', stat.titolare], ['Minuti', stat.minuti]]
+  const specific =
+    role === 'P'
+      ? [['Gol subiti', stat.golSubiti], ['Rigori parati', stat.rigoriParati]]
+      : [['Gol', stat.gol], ['Assist', stat.assist]]
+  const cartellini = [['Ammonizioni', stat.ammonizioni], ['Espulsioni', stat.espulsioni]]
+  const coppe = stat.altre
+    ? [['Coppe', `${stat.altre.presenze} pres${stat.altre.gol ? ` · ${stat.altre.gol} gol` : ''}`]]
+    : []
+  return [...base, ...specific, ...cartellini, ...coppe].filter(([, v]) => v != null && v !== '' && v !== 0)
+}
+
 const STATUS_LABELS = {
   titolare: 'Titolare',
   entrato: 'Entrato a gara in corso',
@@ -79,6 +94,7 @@ export default function PlayerDetailsButton({ player }) {
 
   const tm = detail?.data?.transfermarkt
   const prev = player.prevSeason
+  const abroad = player.prevSeasonAbroad
 
   return (
     <>
@@ -150,10 +166,51 @@ export default function PlayerDetailsButton({ player }) {
                   </ul>
                 </div>
               </div>
+            ) : abroad ? (
+              <div className="flex flex-col">
+                <div className="flex items-baseline justify-between gap-2 border-b border-ink pb-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-caps">Stagione {abroad.season}</span>
+                  <span className="font-mono text-[10px] text-muted">fuori dalla Serie A</span>
+                </div>
+                <div className="flex items-stretch gap-3 border-b border-hair py-3">
+                  <div className="flex flex-1 flex-col items-center justify-center gap-1 border-[1.5px] border-azzurro px-2 py-2 text-center">
+                    <span className="font-serif text-[19px] font-medium leading-tight text-ink">{abroad.club}</span>
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-caps ${
+                        abroad.primaDivisione ? 'text-azzurro' : 'text-muted'
+                      }`}
+                    >
+                      {abroad.competition}
+                    </span>
+                  </div>
+                  <ul className="flex-1">
+                    {abroadEntries(abroad, player.roleClassic).map(([label, value]) => (
+                      <li
+                        key={label}
+                        className="flex items-baseline justify-between border-b border-hair py-1 last:border-b-0"
+                      >
+                        <span className="text-[12px] text-muted">{label}</span>
+                        <span className="font-mono text-[13px] font-semibold">{value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {abroad.coppa && (
+                  <p className="py-2 font-serif text-[13px] italic leading-relaxed text-muted">
+                    Nessun campionato giocato: solo presenze in coppa.
+                  </p>
+                )}
+                {abroad.altroClub && (
+                  <p className="py-2 font-serif text-[13px] italic leading-relaxed text-muted">
+                    Nella stessa stagione anche {abroad.altroClub.presenze} presenz
+                    {abroad.altroClub.presenze === 1 ? 'a' : 'e'} con {abroad.altroClub.club}
+                    {abroad.altroClub.gol ? ` (${abroad.altroClub.gol} gol)` : ''}.
+                  </p>
+                )}
+              </div>
             ) : (
               <p className="border-b border-hair pb-3 font-serif text-[13px] italic text-muted">
-                Nessuna presenza in Serie A nell'ultima stagione: esordiente, arrivo dall'estero o rientro da un
-                prestito.
+                Nessuna presenza da nessuna parte nell'ultima stagione.
               </p>
             )}
 

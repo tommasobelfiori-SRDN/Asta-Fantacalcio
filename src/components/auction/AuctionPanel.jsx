@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore, useOpponentName } from '../../store.js'
 import { computeSuggestedBid, penaltyRankBadge, hasReliableAverage } from '../../lib/engine.js'
 import { ROLE_LABELS, ROLE_BADGE_CLASSES } from '../../lib/roles.js'
-import { formatAvg } from '../../lib/format.js'
+import { formatAvg, formatCompetition } from '../../lib/format.js'
 import Badge, { STATUS_MARKS } from '../common/Badge.jsx'
 import TakenForm from '../players/TakenForm.jsx'
 import RivalsBlock from './RivalsBlock.jsx'
@@ -69,6 +69,7 @@ export default function AuctionPanel() {
   if (!player) return <EmptyState />
 
   const prev = player.prevSeason
+  const abroad = player.prevSeasonAbroad
   const penalty = penaltyRankBadge(player)
   const tm = detail?.data?.transfermarkt
   // Un ceduto può essere ancora selezionato (era in lista prima dell'ultimo
@@ -156,7 +157,9 @@ export default function AuctionPanel() {
         {[
           ['Quot.', player.quotazioneClassicAttuale, 'text-ink'],
           ['FVM', player.fvmClassic, 'text-ink'],
-          ['FM 25/26', prev ? formatAvg(prev.fantamedia) : '—', prev && prev.fantamedia >= 7 ? 'text-campo' : 'text-ink'],
+          prev || !abroad
+            ? ['FM 25/26', prev ? formatAvg(prev.fantamedia) : '—', prev && prev.fantamedia >= 7 ? 'text-campo' : 'text-ink']
+            : ['Presenze', abroad.presenze, 'text-ink'],
         ].map(([label, value, color]) => (
           <div key={label} className="flex flex-col items-center gap-0.5 border border-hair py-2">
             <span className={`font-mono text-[19px] font-semibold ${color}`}>{value}</span>
@@ -192,9 +195,64 @@ export default function AuctionPanel() {
             )}
           </ul>
         </div>
+      ) : abroad ? (
+        /* Non ha giocato in Serie A, ma da qualche parte ha giocato: è l'unico
+           metro che si ha per capire chi si sta comprando. */
+        <div className="flex flex-col">
+          <div className="flex items-baseline justify-between gap-2 border-b border-ink pb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-caps">Stagione {abroad.season}</span>
+            <span className="truncate font-mono text-[10px] text-muted">fuori dalla Serie A</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-2 border-b border-hair py-2">
+            <span className="min-w-0 flex-1 truncate font-serif text-[16px] font-medium text-ink">{abroad.club}</span>
+            <span
+              className={`shrink-0 text-[10px] font-bold uppercase tracking-caps ${
+                abroad.primaDivisione ? 'text-azzurro' : 'text-muted'
+              }`}
+            >
+              {formatCompetition(abroad.competition)}
+            </span>
+          </div>
+          {abroad.coppa ? (
+            <p className="py-2 font-serif text-[13px] italic leading-relaxed text-muted">
+              Solo {abroad.presenze} presenz{abroad.presenze === 1 ? 'a' : 'e'} in coppa: nessun campionato giocato.
+            </p>
+          ) : (
+            <ul>
+              <StatRow label="Presenze" value={`${abroad.presenze}${abroad.titolare ? ` · ${abroad.titolare} da titolare` : ''}`} />
+              <StatRow label="Minuti" value={abroad.minuti} />
+              {player.roleClassic === 'P' ? (
+                <>
+                  <StatRow label="Gol subiti" value={abroad.golSubiti} />
+                  <StatRow label="Rigori parati" value={abroad.rigoriParati} />
+                </>
+              ) : (
+                <>
+                  <StatRow label="Gol" value={abroad.gol} />
+                  <StatRow label="Assist" value={abroad.assist} />
+                </>
+              )}
+              {abroad.altre && (
+                <StatRow
+                  label="Coppe"
+                  value={`${abroad.altre.presenze} pres${abroad.altre.gol ? ` · ${abroad.altre.gol} gol` : ''}`}
+                />
+              )}
+            </ul>
+          )}
+          {/* Chi ha cambiato squadra a gennaio ha fatto due mezze stagioni:
+              i numeri qui sopra ne raccontano una sola. */}
+          {abroad.altroClub && (
+            <p className="mt-1.5 font-serif text-[12px] italic leading-relaxed text-muted">
+              Nella stessa stagione anche {abroad.altroClub.presenze} presenz
+              {abroad.altroClub.presenze === 1 ? 'a' : 'e'} con {abroad.altroClub.club}
+              {abroad.altroClub.gol ? ` (${abroad.altroClub.gol} gol)` : ''}.
+            </p>
+          )}
+        </div>
       ) : (
         <p className="font-serif text-[13px] italic text-muted">
-          Nessuna presenza in Serie A l'anno scorso: esordiente o arrivo dall'estero.
+          Nessuna presenza da nessuna parte l'anno scorso: esordiente assoluto.
         </p>
       )}
 

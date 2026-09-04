@@ -34,7 +34,15 @@ export default function PlayerTable() {
         if (rank(a) !== rank(b)) return rank(b) - rank(a)
         return (b.prevSeason?.fantamedia ?? -1) - (a.prevSeason?.fantamedia ?? -1)
       }
-      if (filters.sortBy === 'gol') return (b.prevSeason?.gol ?? -1) - (a.prevSeason?.gol ?? -1)
+      // I gol fuori dalla Serie A contano, ma non sono confrontabili con quelli
+      // del nostro campionato: restano sotto, ordinati fra loro, invece di
+      // sparire in fondo insieme a chi non ha giocato affatto.
+      if (filters.sortBy === 'gol') {
+        const rank = (p) => (p.prevSeason ? 2 : p.prevSeasonAbroad ? 1 : 0)
+        if (rank(a) !== rank(b)) return rank(b) - rank(a)
+        const gol = (p) => p.prevSeason?.gol ?? p.prevSeasonAbroad?.gol ?? -1
+        return gol(b) - gol(a)
+      }
       return (b.fvmClassic ?? 0) - (a.fvmClassic ?? 0)
     })
   }, [players, draftByPlayerId, filters])

@@ -29,3 +29,9 @@ export function formatSeasonShort(season) {
   const m = String(season || '').match(/^(\d{4})-(\d{2})$/)
   return m ? `${m[1].slice(2)}/${m[2]}` : season || ''
 }
+
+// Il campionato di provenienza in forma breve, per le righe strette del listone:
+// "Premier League" resta, "Serie C - B" diventa "Serie C".
+export function formatCompetition(name) {
+  return String(name || '').replace(/\s*-\s*[A-Z]$/, '').trim()
+}
